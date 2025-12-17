@@ -505,8 +505,8 @@ describe('SpekraApiClient', () => {
 
       await client.sendReport(payload);
 
-      // Warning log should show masked key as '***' for short keys
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('***'));
+      // Warning log should show fully redacted key
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('[REDACTED]'));
     });
 
     it('should mask empty API key when echoed in error response', async () => {

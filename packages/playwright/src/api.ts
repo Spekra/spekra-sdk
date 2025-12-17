@@ -16,20 +16,14 @@ interface RequestResult {
   errorType?: SpekraError['type'];
 }
 
-function maskApiKey(key: string): string {
-  if (!key || key.length < 8) return '***';
-  return `${key.slice(0, 3)}...${key.slice(-4)}`;
+function maskApiKey(): string {
+  return '[REDACTED]';
 }
 
 function maskSensitiveData(text: string, apiKey: string): string {
   if (!apiKey) return text;
-  if (apiKey.length < 8) {
-    // For short keys, only replace literal occurrences to avoid global regex matching
-    return text.split(apiKey).join(maskApiKey(apiKey));
-  }
-  // Escape special regex characters in the API key
-  const escaped = apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(escaped, 'g'), maskApiKey(apiKey));
+  // Replace all occurrences of the API key with full redaction
+  return text.split(apiKey).join(maskApiKey());
 }
 
 export class SpekraApiClient {
