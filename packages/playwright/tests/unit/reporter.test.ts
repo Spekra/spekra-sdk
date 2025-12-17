@@ -1345,6 +1345,13 @@ describe('SpekraReporter', () => {
       });
 
       const reporter = new SpekraReporter({ apiKey: 'test-api-key' });
+
+      // Clear CI envs to force git usage
+      const originalEnv = { ...process.env };
+      delete process.env.GITHUB_ACTIONS;
+      delete process.env.GITHUB_REF_NAME;
+      delete process.env.GITHUB_SHA;
+
       reporter.onBegin(createMockConfig(), createMockSuite());
 
       const test = createMockTest('test', '/tests/example.spec.ts');
@@ -1361,6 +1368,9 @@ describe('SpekraReporter', () => {
       // Git info should be present (from mock)
       expect(body.branch).toBe('main');
       expect(body.commitSha).toBe('abc123def456');
+
+      // Restore env
+      process.env = originalEnv;
     });
 
     it('should handle git info fetch failure gracefully', async () => {
