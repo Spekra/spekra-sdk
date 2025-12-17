@@ -25,7 +25,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
     "husky": "^9.0.0",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^16.2.7"
   },
   "lint-staged": {
     "packages/playwright/src/**/*.ts": [
