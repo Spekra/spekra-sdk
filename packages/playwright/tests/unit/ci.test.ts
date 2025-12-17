@@ -77,6 +77,8 @@ describe('CI Detection', () => {
       delete process.env.JENKINS_URL;
       delete process.env.TF_BUILD;
       delete process.env.BITBUCKET_PIPELINE_UUID;
+      // Clear GitHub specific envs that might leak from actual CI environment
+      delete process.env.GITHUB_RUN_ATTEMPT;
     });
 
     it('should detect GitHub Actions', () => {

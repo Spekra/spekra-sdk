@@ -1022,6 +1022,8 @@ describe('SpekraReporter', () => {
       delete process.env.TEST_RUN_ID;
       process.env.GITHUB_ACTIONS = 'true';
       process.env.GITHUB_RUN_ID = 'gh-run-456';
+      // Ensure no attempt suffix is added
+      delete process.env.GITHUB_RUN_ATTEMPT;
 
       const reporter = new SpekraReporter({ apiKey: 'test-api-key' });
       reporter.onBegin(createMockConfig(), createMockSuite());

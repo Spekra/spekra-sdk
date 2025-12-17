@@ -14,6 +14,7 @@
 - [ ] Create migration guides for major versions
 
 ### Infrastructure
+- [ ] Disable GitHub's default CodeQL setup (Settings → Code security → Code scanning → Configure → Disable default setup) in favor of workflow file
 - [ ] Consider adding CODEOWNERS when team grows
 - [ ] Set up release canary/beta channel
 - [ ] Add package provenance verification docs for users
