@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://spekra.dev/docs
+    about: Check the documentation for setup guides and API reference
+  - name: Issues
+    url: https://github.com/spekra/spekra-sdk/issues
+    about: Report bugs and request features in GitHub Issues

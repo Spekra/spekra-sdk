@@ -1,0 +1,315 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Spekra Public API",
+    "version": "1.0.0",
+    "description": "The Spekra Public API allows you to submit Playwright test results for analysis and tracking.\n\n## Authentication\n\nAll endpoints (except health check) require authentication via API key. You can authenticate using either:\n\n- **x-api-key header**: `x-api-key: your-api-key`\n- **Authorization header**: `Authorization: Bearer your-api-key`\n\nGet your API key from the [Spekra dashboard](https://spekra.dev/dashboard/settings/api-keys).\n\n## SDK Integration\n\nFor the easiest integration, use the official [@spekra/playwright](https://www.npmjs.com/package/@spekra/playwright) reporter:\n\n```typescript\n// playwright.config.ts\nexport default defineConfig({\n  reporter: [\n    ['@spekra/playwright', { apiKey: process.env.SPEKRA_API_KEY }]\n  ],\n});\n```\n\n## Rate Limits\n\n- 1000 requests per minute per API key\n- Maximum 500 test results per request",
+    "contact": {
+      "name": "Spekra Support",
+      "url": "https://spekra.dev"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://spekra.dev",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Reports",
+      "description": "Test results reporting endpoints"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "API key for authentication. Can also use Authorization: Bearer <key>"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Bearer token authentication (alternative to x-api-key header)"
+      }
+    },
+    "schemas": {
+      "ReportSummary": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "testsReceived": {
+            "type": "integer"
+          },
+          "passed": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          }
+        },
+        "required": ["runId", "testsReceived", "passed", "failed", "skipped"]
+      },
+      "ReportSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "message": {
+            "type": "string",
+            "example": "Test results received"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ReportSummary"
+          }
+        },
+        "required": ["success", "message", "summary"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "Missing required field: runId"
+          },
+          "details": {
+            "nullable": true,
+            "description": "Additional error details (validation errors, etc.)"
+          }
+        },
+        "required": ["error"]
+      },
+      "TestResult": {
+        "type": "object",
+        "properties": {
+          "testFile": {
+            "type": "string",
+            "description": "Relative path to the test file",
+            "example": "auth/login.spec.ts"
+          },
+          "testTitle": {
+            "type": "string",
+            "description": "Full test title including describe blocks",
+            "example": "Login > should authenticate with valid credentials"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped", "timedOut", "interrupted"],
+            "description": "Test outcome status",
+            "example": "passed"
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Test duration in milliseconds",
+            "example": 1234
+          },
+          "retry": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Retry attempt number (0 = first run)",
+            "example": 0
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if test failed",
+            "example": "Expected element to be visible"
+          }
+        },
+        "required": ["testFile", "testTitle", "status", "durationMs"]
+      },
+      "ReportPayload": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique identifier for this test run",
+            "example": "ci-12345678"
+          },
+          "project": {
+            "type": "string",
+            "description": "Playwright project name",
+            "example": "chromium"
+          },
+          "branch": {
+            "type": "string",
+            "nullable": true,
+            "description": "Git branch name",
+            "example": "main"
+          },
+          "commitSha": {
+            "type": "string",
+            "nullable": true,
+            "description": "Git commit SHA",
+            "example": "abc123def456"
+          },
+          "ciUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "Link to the CI job",
+            "example": "https://github.com/org/repo/actions/runs/12345"
+          },
+          "shardIndex": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Current shard index (1-based)",
+            "example": 1
+          },
+          "totalShards": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "description": "Total number of shards",
+            "example": 4
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO timestamp when run started",
+            "example": "2024-01-15T10:30:00.000Z"
+          },
+          "finishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "ISO timestamp when run finished (null if still running)",
+            "example": "2024-01-15T10:35:00.000Z"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestResult"
+            },
+            "minItems": 1,
+            "description": "Array of test results"
+          }
+        },
+        "required": ["runId", "results"]
+      },
+      "HealthCheckResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "service": {
+            "type": "string",
+            "example": "spekra-reports"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": ["status", "service", "timestamp"]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/reports": {
+      "post": {
+        "summary": "Submit test results",
+        "description": "Submit Playwright test results from a test run. Supports sharded runs - multiple submissions with the same runId will be aggregated. Results are batched and can be sent incrementally during test execution.",
+        "tags": ["Reports"],
+        "security": [
+          { "ApiKeyAuth": [] },
+          { "BearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Test run results payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test results received successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Health check",
+        "description": "Check if the reports service is running",
+        "tags": ["Reports"],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
