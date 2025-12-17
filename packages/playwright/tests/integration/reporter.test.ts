@@ -117,6 +117,13 @@ function createMockResult(options: ResultOptions = {}): PlaywrightTestResult {
 
 describe('Reporter → Prism Integration', () => {
   beforeAll(async () => {
+    // Check if Prism is already running (e.g., started by CI)
+    const alreadyRunning = await waitForPrism(5);
+    if (alreadyRunning) {
+      // Prism is already running, no need to start it
+      return;
+    }
+
     // Start Prism mock server
     prismProcess = spawn(
       'npx',
