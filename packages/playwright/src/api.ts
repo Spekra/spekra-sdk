@@ -21,6 +21,13 @@ function maskApiKey(key: string): string {
   return `${key.slice(0, 3)}...${key.slice(-4)}`;
 }
 
+function maskSensitiveData(text: string, apiKey: string): string {
+  if (!apiKey || apiKey.length < 8) return text;
+  // Escape special regex characters in the API key
+  const escaped = apiKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(escaped, 'g'), maskApiKey(apiKey));
+}
+
 export class SpekraApiClient {
   private config: ResolvedConfig;
 
@@ -145,7 +152,7 @@ export class SpekraApiClient {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
-        const safeErrorText = errorText.replace(this.config.apiKey, maskApiKey(this.config.apiKey));
+        const safeErrorText = maskSensitiveData(errorText, this.config.apiKey);
         this.logWarning(
           `API returned ${response.status}: ${safeErrorText} (request: ${requestId})`
         );
@@ -173,7 +180,7 @@ export class SpekraApiClient {
           errorMessage = `Request timed out after ${this.config.timeout}ms`;
           this.logWarning(`${errorMessage} (request: ${requestId})`);
         } else {
-          errorMessage = error.message;
+          errorMessage = maskSensitiveData(error.message, this.config.apiKey);
           this.logWarning(`Failed to send report: ${errorMessage} (request: ${requestId})`);
         }
       } else {
