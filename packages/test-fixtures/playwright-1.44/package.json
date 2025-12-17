@@ -1,0 +1,13 @@
+{
+  "name": "@spekra/test-fixture-pw-1.44",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "playwright install chromium",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.44.0",
+    "@spekra/playwright": "workspace:*"
+  }
+}

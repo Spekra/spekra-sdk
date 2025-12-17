@@ -1,0 +1,34 @@
+# Configuration for actions/labeler
+# Automatically labels PRs based on files changed
+
+# Package labels
+pkg:playwright:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/playwright/**'
+
+# Content type labels
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.md'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: '**/tests/unit/**'
+      - any-glob-to-any-file: '**/tests/integration/**'
+      - any-glob-to-any-file: '**/tests/load/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: '**/package.json'
+      - any-glob-to-any-file: 'pnpm-lock.yaml'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file: '**/tsconfig.json'
+      - any-glob-to-any-file: '**/vitest.config.ts'
+      - any-glob-to-any-file: '**/.eslintrc.*'
+      - any-glob-to-any-file: '**/.prettierrc'

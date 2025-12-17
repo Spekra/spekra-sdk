@@ -1,0 +1,44 @@
+{
+  "name": "spekra-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Spekra SDK monorepo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spekra/spekra-sdk.git"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "test:coverage": "pnpm -r test:coverage",
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:tests": "pnpm -r typecheck:tests",
+    "lint": "pnpm -r lint",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && changeset publish --access public",
+    "prerelease:enter": "changeset pre enter alpha",
+    "prerelease:exit": "changeset pre exit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "packages/playwright/src/**/*.ts": [
+      "eslint --fix --config packages/playwright/eslint.config.ts",
+      "prettier --write"
+    ],
+    "packages/playwright/tests/**/*.ts": [
+      "eslint --fix --config packages/playwright/eslint.config.ts",
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
