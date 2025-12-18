@@ -462,7 +462,7 @@ This logs:
 
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 20.0.0
 - Playwright >= 1.40.0
 
 ## License
