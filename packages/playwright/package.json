@@ -1,6 +1,6 @@
 {
   "name": "@spekra/playwright",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "description": "Playwright test reporter for Spekra - send test results to the Spekra platform",
   "author": "Spekra",
   "license": "MIT",

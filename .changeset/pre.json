@@ -7,5 +7,8 @@
     "@spekra/test-fixture-pw-1.44": "0.0.0",
     "@spekra/test-fixture-pw-1.48": "0.0.0"
   },
-  "changesets": []
+  "changesets": [
+    "frank-llamas-tie",
+    "shaggy-horses-follow"
+  ]
 }
