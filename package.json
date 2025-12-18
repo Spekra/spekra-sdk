@@ -18,6 +18,7 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish --access public",
+    "changeset:empty": "pnpm changeset add --empty",
     "prerelease:enter": "changeset pre enter alpha",
     "prerelease:exit": "changeset pre exit",
     "prepare": "husky"
