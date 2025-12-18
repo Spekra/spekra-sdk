@@ -5,7 +5,7 @@
   "description": "Spekra SDK monorepo",
   "repository": {
     "type": "git",
-    "url": "https://github.com/spekra/spekra-sdk.git"
+    "url": "git+https://github.com/Spekra/spekra-sdk.git"
   },
   "scripts": {
     "build": "pnpm -r build",
