@@ -1,11 +1,21 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import spekraPlugin from './eslint-rules';
 
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'eslint.config.ts'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '*.js',
+      '*.cjs',
+      '*.mjs',
+      'eslint.config.ts',
+      'vitest.config.ts',
+      'eslint-rules/', // Don't lint the lint rules themselves with type-checked config
+    ],
   },
 
   // Base configs
@@ -38,6 +48,26 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/unbound-method': 'off', // vi.mocked() triggers this incorrectly
+      '@typescript-eslint/no-unsafe-function-type': 'off', // Allow Function type in test callbacks
+    },
+  },
+
+  // Custom Spekra rules for unit tests
+  {
+    files: ['**/tests/unit/**/*.test.ts'],
+    plugins: {
+      spekra: spekraPlugin,
+    },
+    rules: {
+      'spekra/mirror-test-structure': [
+        'error',
+        {
+          testDir: 'tests/unit',
+          srcDir: 'src',
+          excludedFiles: ['index.ts', 'types.ts'],
+        },
+      ],
     },
   },
 

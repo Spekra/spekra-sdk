@@ -1,3 +1,35 @@
+/**
+ * Redaction pattern - either a string (case-insensitive exact match) or a RegExp
+ */
+export type RedactionPattern = string | RegExp;
+
+/**
+ * Redaction configuration options
+ */
+export interface RedactionOptions {
+  /**
+   * Enable/disable redaction
+   * @default true
+   */
+  enabled?: boolean;
+
+  /**
+   * Custom patterns to redact (strings or RegExp)
+   * Strings are matched case-insensitively, RegExp patterns are used as-is.
+   * These are ADDED to the built-in patterns (emails, tokens, API keys, etc.)
+   *
+   * @example ['password', 'secret', /my-api-key-\d+/]
+   */
+  patterns?: RedactionPattern[];
+
+  /**
+   * Replace the built-in patterns instead of extending them
+   * Use with caution - disables default PII protection
+   * @default false
+   */
+  replaceBuiltIn?: boolean;
+}
+
 export interface SpekraReporterOptions {
   /**
    * Your Spekra API key
@@ -6,15 +38,24 @@ export interface SpekraReporterOptions {
   apiKey?: string;
 
   /**
+   * Source identifier for this reporter installation.
+   * Used to group test runs from the same test suite/repo.
+   *
+   * Naming guidance:
+   * - Use kebab-case: 'frontend-e2e', 'api-integration', 'mobile-web'
+   * - Include the app/service name and test type
+   * - Keep it stable - changing source creates a new grouping
+   *
+   * @example 'checkout-e2e'
+   * @example 'api-tests'
+   */
+  source?: string;
+
+  /**
    * API endpoint URL
    * @default 'https://spekra.dev/api/reports'
    */
   apiUrl?: string;
-
-  /**
-   * Override project name (defaults to Playwright project name)
-   */
-  projectName?: string;
 
   /**
    * Enable/disable reporting
@@ -27,6 +68,35 @@ export interface SpekraReporterOptions {
    * @default false
    */
   debug?: boolean;
+
+  /**
+   * PII/secrets redaction configuration.
+   * Redaction happens CLIENT-SIDE before any data is sent to Spekra.
+   *
+   * Can be:
+   * - `true` (default): Enable with built-in patterns
+   * - `false`: Disable redaction entirely (not recommended)
+   * - `RedactionPattern[]`: Custom patterns to add to built-in patterns
+   * - `RedactionOptions`: Full configuration object
+   *
+   * Built-in patterns include: emails, JWT tokens, API keys, credit cards,
+   * SSNs, phone numbers, AWS keys, GitHub tokens, and URL credentials.
+   *
+   * @example
+   * // Add custom patterns
+   * redact: ['password', 'secret', /my-api-key-\d+/]
+   *
+   * @example
+   * // Full configuration
+   * redact: {
+   *   enabled: true,
+   *   patterns: ['internal-token', /company-secret-\w+/],
+   *   replaceBuiltIn: false
+   * }
+   *
+   * @default true
+   */
+  redact?: boolean | RedactionPattern[] | RedactionOptions;
 
   /**
    * Number of results to batch before sending
@@ -87,6 +157,14 @@ export interface SpekraReporterOptions {
    * Callback to receive reporter metrics
    */
   onMetrics?: (metrics: SpekraMetrics) => void;
+
+  /**
+   * Internal development mode for SDK debugging.
+   * Logs raw Playwright data structures to help debug title parsing.
+   * Not intended for end-user debugging - use `debug` for that.
+   * @internal
+   */
+  _devMode?: boolean;
 }
 
 export interface SpekraError {
@@ -121,12 +199,22 @@ export interface SpekraMetrics {
   bytesUncompressed: number;
 }
 
+/**
+ * Resolved redaction configuration (normalized from user input)
+ */
+export interface ResolvedRedactionConfig {
+  enabled: boolean;
+  patterns: RedactionPattern[];
+  replaceBuiltIn: boolean;
+}
+
 export interface ResolvedConfig {
   apiKey: string;
+  source: string;
   apiUrl: string;
-  projectName: string | null;
   enabled: boolean;
   debug: boolean;
+  redaction: ResolvedRedactionConfig;
   batchSize: number;
   timeout: number;
   maxRetries: number;
@@ -137,6 +225,7 @@ export interface ResolvedConfig {
   maxBufferSize: number;
   onError: ((error: SpekraError) => void) | null;
   onMetrics: ((metrics: SpekraMetrics) => void) | null;
+  _devMode: boolean;
 }
 
 export interface GitInfo {
@@ -163,8 +252,16 @@ export type CIProvider =
 export interface TestResult {
   /** Relative path to test file */
   testFile: string;
-  /** Full test title including describe blocks */
-  testTitle: string;
+  /** Full test title (describe blocks + test name, no tags) */
+  fullTitle: string;
+  /** Suite/describe block hierarchy */
+  suitePath: string[];
+  /** Test name without tags */
+  testName: string;
+  /** Tags extracted from annotations and inline @tag in title */
+  tags: string[];
+  /** Playwright project name */
+  project: string;
   /** Test outcome */
   status: TestStatus;
   /** Test duration in milliseconds */
@@ -180,8 +277,8 @@ export type TestStatus = 'passed' | 'failed' | 'skipped' | 'timedOut' | 'interru
 export interface ReportPayload {
   /** Unique identifier for this test run */
   runId: string;
-  /** Playwright project name */
-  project: string;
+  /** Source identifier for this reporter installation */
+  source: string;
   /** Git branch name */
   branch: string | null;
   /** Git commit SHA */

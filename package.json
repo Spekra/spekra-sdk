@@ -8,6 +8,8 @@
     "url": "git+https://github.com/Spekra/spekra-sdk.git"
   },
   "scripts": {
+    "clean": "pnpm -r clean && rm -rf node_modules pnpm-lock.yaml && pnpm store prune",
+    "refresh": "pnpm -r refresh && pnpm install",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",

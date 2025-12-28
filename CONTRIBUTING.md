@@ -41,7 +41,6 @@ spekra-sdk/
 ├── packages/
 │   ├── playwright/        # @spekra/playwright - Playwright reporter
 │   └── test-fixtures/     # Real Playwright projects for version compatibility testing
-│       ├── playwright-1.40/
 │       ├── playwright-1.44/
 │       └── playwright-1.48/
 ├── .changeset/            # Changeset configuration
