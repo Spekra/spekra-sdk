@@ -203,10 +203,19 @@ export class UploadClient extends BaseClient {
         };
       }
 
+      const errorMessage = result.error?.message ?? 'Upload failed';
+      this.logger.warn('Failed to upload artifact', {
+        id: task.id,
+        file: fileName,
+        error: errorMessage,
+        statusCode: result.error?.statusCode,
+        retries: result.retryCount,
+      });
+
       return {
         id: task.id,
         success: false,
-        error: result.error?.message ?? 'Upload failed',
+        error: errorMessage,
         bytesUploaded: 0,
       };
     } catch (error) {

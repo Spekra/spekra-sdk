@@ -1075,4 +1075,124 @@ describe('CollectTestResultUseCase', () => {
       expect(output.success).toBe(true);
     });
   });
+
+  // ==========================================================================
+  // ANSI Escape Code Stripping
+  // ==========================================================================
+
+  describe('ANSI escape code stripping', () => {
+    it('should strip basic color codes from error messages', () => {
+      const test = createMockTest();
+      // Simulate Playwright's colored output: \x1b[2m (dim) \x1b[22m (normal)
+      const coloredError =
+        '\x1b[2mexpect(\x1b[22m \x1b[31mreceived\x1b[39m). \x1b[22mtoBe \x1b[2m(\x1b[22m \x1b[32mexpected\x1b[39m';
+      const result = createMockResult({
+        status: 'failed',
+        error: { message: coloredError },
+      });
+
+      const output = useCase.execute({ test, result });
+
+      expect(output.success).toBe(true);
+      if (!output.success) throw new Error('Expected success');
+      // Should strip ANSI codes
+      expect(output.data.testResult.errorMessage).not.toContain('\x1b[');
+      expect(output.data.testResult.errorMessage).not.toContain('[2m');
+      expect(output.data.testResult.errorMessage).not.toContain('[31m');
+      // But keep the actual content
+      expect(output.data.testResult.errorMessage).toContain('expect');
+      expect(output.data.testResult.errorMessage).toContain('received');
+      expect(output.data.testResult.errorMessage).toContain('toBe');
+    });
+
+    it('should strip ANSI codes from expected/received diff output', () => {
+      const test = createMockTest();
+      // Real-world example from Playwright expect assertion
+      const coloredError =
+        'Error:\n' +
+        ' \x1b[2mexpect(\x1b[22m \x1b[31mreceived\x1b[39m \x1b[2m).\x1b[22mtoBe\x1b[2m(\x1b[22m \x1b[32mexpected\x1b[39m \x1b[2m) // Object.is equality\x1b[22m\n\n' +
+        'Expected:  \x1b[32m200\x1b[39m\n' +
+        'Received:  \x1b[31m400\x1b[39m';
+      const result = createMockResult({
+        status: 'failed',
+        error: { message: coloredError },
+      });
+
+      const output = useCase.execute({ test, result });
+
+      expect(output.success).toBe(true);
+      if (!output.success) throw new Error('Expected success');
+      const errorMessage = output.data.testResult.errorMessage!;
+      // Verify no ANSI codes remain
+      // eslint-disable-next-line no-control-regex
+      expect(errorMessage).not.toMatch(/\x1b\[/);
+      // Verify content is preserved
+      expect(errorMessage).toContain('Expected:');
+      expect(errorMessage).toContain('200');
+      expect(errorMessage).toContain('Received:');
+      expect(errorMessage).toContain('400');
+    });
+
+    it('should handle errors without ANSI codes (no change)', () => {
+      const test = createMockTest();
+      const plainError = 'Expected 200 but received 400';
+      const result = createMockResult({
+        status: 'failed',
+        error: { message: plainError },
+      });
+
+      const output = useCase.execute({ test, result });
+
+      expect(output.success).toBe(true);
+      if (!output.success) throw new Error('Expected success');
+      expect(output.data.testResult.errorMessage).toBe(plainError);
+    });
+
+    it('should strip various ANSI escape sequences', () => {
+      const test = createMockTest();
+      // Different ANSI codes: bold, underline, cursor movement, colors
+      const complexAnsi =
+        '\x1b[1mBold\x1b[0m ' +
+        '\x1b[4mUnderline\x1b[24m ' +
+        '\x1b[38;5;196mRed256\x1b[0m ' +
+        '\x1b[48;2;255;0;0mTrueColorBg\x1b[0m';
+      const result = createMockResult({
+        status: 'failed',
+        error: { message: complexAnsi },
+      });
+
+      const output = useCase.execute({ test, result });
+
+      expect(output.success).toBe(true);
+      if (!output.success) throw new Error('Expected success');
+      const errorMessage = output.data.testResult.errorMessage!;
+      // eslint-disable-next-line no-control-regex
+      expect(errorMessage).not.toMatch(/\x1b/);
+      expect(errorMessage).toContain('Bold');
+      expect(errorMessage).toContain('Underline');
+    });
+
+    it('should strip ANSI codes from step errors', () => {
+      const test = createMockTest();
+      const result = createMockResult({
+        status: 'failed',
+        steps: [
+          {
+            title: 'Failing step',
+            category: 'test.step',
+            duration: 50,
+            error: { message: '\x1b[31mStep failed with color\x1b[39m' },
+            steps: [],
+          },
+        ],
+      });
+
+      const output = useCase.execute({ test, result });
+
+      expect(output.success).toBe(true);
+      if (!output.success) throw new Error('Expected success');
+      expect(output.data.testResult.steps[0].error).toBe('Step failed with color');
+      expect(output.data.testResult.steps[0].error).not.toContain('\x1b[');
+    });
+  });
 });

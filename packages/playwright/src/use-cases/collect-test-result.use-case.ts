@@ -338,11 +338,30 @@ export class CollectTestResultUseCase extends BaseUseCase<
 
     if (!message) return null;
 
+    // Strip ANSI escape codes (terminal colors/formatting)
+    message = this.stripAnsi(message);
+
     // Truncate
     message = this.truncateErrorMessage(message);
 
     // Redact
     return this.redactionService.redact(message);
+  }
+
+  /**
+   * Strip ANSI escape codes from a string
+   * Handles color codes, cursor movement, and other terminal formatting
+   */
+  private stripAnsi(str: string): string {
+    // Matches ANSI escape sequences:
+    // - \x1b[ or \033[ followed by parameters and a letter (CSI sequences)
+    // - \x1b] followed by OS command sequences ending with BEL or ST
+    // - Other escape sequences
+    return str.replace(
+      // eslint-disable-next-line no-control-regex
+      /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+      ''
+    );
   }
 
   /**
