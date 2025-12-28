@@ -268,10 +268,14 @@ export class CollectTestResultUseCase extends BaseUseCase<
    * Check if title looks like a file path
    */
   private isFilePath(title: string): boolean {
-    return (
-      /\.(spec|test)\.(ts|js|mjs|cjs|tsx|jsx)$/.test(title) ||
-      /^.*\/.*\.(ts|js|mjs|cjs|tsx|jsx)$/.test(title)
-    );
+    // Check for spec/test file pattern
+    if (/\.(spec|test)\.(ts|js|mjs|cjs|tsx|jsx)$/.test(title)) {
+      return true;
+    }
+
+    // Check if it looks like a path: contains slash and ends with valid extension
+    // Using includes() + simple regex avoids ReDoS from nested quantifiers
+    return title.includes('/') && /\.(ts|js|mjs|cjs|tsx|jsx)$/.test(title);
   }
 
   /**

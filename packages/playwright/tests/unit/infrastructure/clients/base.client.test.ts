@@ -244,7 +244,7 @@ describe('BaseClient', () => {
 
   describe('network edge cases', () => {
     it('should handle slow responses that complete before timeout', async () => {
-      // Response takes 100ms but timeout is 5000ms
+      // Response takes ~100ms but timeout is 5000ms
       mockFetch.mockImplementation(async () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
         return {
@@ -261,7 +261,8 @@ describe('BaseClient', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ data: 'slow but successful' });
-      expect(result.latencyMs).toBeGreaterThanOrEqual(100);
+      // Allow small timing variance (setTimeout isn't guaranteed to be exact)
+      expect(result.latencyMs).toBeGreaterThanOrEqual(95);
     });
 
     it('should handle intermittent failures followed by success', async () => {

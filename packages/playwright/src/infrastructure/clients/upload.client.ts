@@ -157,20 +157,8 @@ export class UploadClient extends BaseClient {
     const fileName = path.basename(task.filePath);
 
     try {
-      // Check if file exists
-      await fs.promises.access(task.filePath);
-    } catch {
-      this.logger.warn('Artifact file not found', { id: task.id, file: fileName });
-      return {
-        id: task.id,
-        success: false,
-        error: `File not found: ${fileName}`,
-        bytesUploaded: 0,
-      };
-    }
-
-    try {
       // Read file directly (no compression for storage uploads)
+      // Note: We don't do a separate access() check to avoid TOCTOU race conditions
       const data = await fs.promises.readFile(task.filePath);
       const fileSize = data.length;
 
@@ -219,6 +207,17 @@ export class UploadClient extends BaseClient {
         bytesUploaded: 0,
       };
     } catch (error) {
+      // Handle file not found separately for clearer error messages
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        this.logger.warn('Artifact file not found', { id: task.id, file: fileName });
+        return {
+          id: task.id,
+          success: false,
+          error: `File not found: ${fileName}`,
+          bytesUploaded: 0,
+        };
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn('Failed to upload artifact', {
         id: task.id,
