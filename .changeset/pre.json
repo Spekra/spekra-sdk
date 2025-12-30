@@ -8,6 +8,7 @@
     "@spekra/test-fixture-pw-1.48": "0.0.0"
   },
   "changesets": [
+    "common-turkeys-say",
     "frank-llamas-tie",
     "shaggy-horses-follow"
   ]
