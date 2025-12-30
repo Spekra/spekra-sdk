@@ -1,0 +1,68 @@
+# Spekra SDK - Deferred Test Cases
+# =================================
+# This file tracks test cases that have been identified but are deferred
+# for later implementation. Use this to capture issues and edge cases
+# discovered during development without writing tests immediately.
+#
+# Why defer tests?
+#   - Code is still in flux and may change significantly
+#   - Want to batch test writing for efficiency
+#   - Need to capture the issue before forgetting it
+#   - Waiting for related features to stabilize
+#
+# When to promote a test:
+#   - Feature/fix is stable and unlikely to change
+#   - Ready to write the actual test implementation
+#   - Write the test in the appropriate test file
+#   - DELETE the entry from this file (don't keep promoted tests here)
+#
+# Status values:
+#   - pending: Not yet implemented
+#   - cancelled: No longer needed (keep with reason briefly, then delete)
+#
+# Entry format:
+#   - id: unique-kebab-case-id
+#     name: Short descriptive name
+#     description: |
+#       Detailed description of what needs to be tested and why.
+#     priority: P1 | P2 | P3
+#     discovered: YYYY-MM-DD
+#     context: |
+#       Additional context about the issue or how it was discovered.
+#     test_scenarios:
+#       - given: Initial state
+#         when: Action taken
+#         then: Expected result
+
+version: "1.0"
+package: "@spekra/playwright"
+
+# ============================================================================
+# REPORTER
+# ============================================================================
+reporter:
+  # Add deferred reporter tests here
+
+# ============================================================================
+# CROSS-VERSION COMPATIBILITY
+# ============================================================================
+cross-version:
+  # Add deferred cross-version compatibility tests here
+
+# ============================================================================
+# API CLIENT
+# ============================================================================
+api:
+  # Add deferred API client tests here
+
+# ============================================================================
+# GIT INFO
+# ============================================================================
+git:
+  # Add deferred git info tests here
+
+# ============================================================================
+# CI DETECTION
+# ============================================================================
+ci:
+  # Add deferred CI detection tests here

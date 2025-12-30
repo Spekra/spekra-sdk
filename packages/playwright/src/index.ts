@@ -3,6 +3,8 @@ export type {
   CIInfo,
   CIProvider,
   GitInfo,
+  RedactionOptions,
+  RedactionPattern,
   ReportPayload,
   ShardInfo,
   SpekraReporterOptions,

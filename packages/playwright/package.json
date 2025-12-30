@@ -39,6 +39,8 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rm -rf dist node_modules pnpm-lock.yaml",
+    "refresh": "pnpm clean && pnpm install",
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
@@ -59,10 +61,10 @@
     "prepublishOnly": "pnpm build && pnpm size"
   },
   "peerDependencies": {
-    "@playwright/test": ">=1.40.0"
+    "@playwright/test": ">=1.44.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.44.0",
     "@size-limit/file": "^11.0.0",
     "@stoplight/prism-cli": "^5.14.2",
     "@types/node": "^20.10.0",

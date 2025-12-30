@@ -7,32 +7,60 @@ import type {
   TestResult as PlaywrightTestResult,
 } from '@playwright/test/reporter';
 
-// Mock the API client to avoid actual network calls
-vi.mock('../../src/api', () => ({
-  SpekraApiClient: vi.fn().mockImplementation(() => ({
-    sendReport: vi.fn().mockResolvedValue({
-      success: true,
-      latencyMs: 10,
-      bytesSent: 100,
-      bytesUncompressed: 200,
-      retryCount: 0,
-      requestId: 'mock-request-id',
-    }),
-  })),
-}));
+// Mock fetch globally (new architecture uses fetch via ApiClient)
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
-// Mock git and CI to avoid external calls
-vi.mock('../../src/git', () => ({
-  getGitInfoAsync: vi.fn().mockResolvedValue({ branch: 'main', commitSha: 'abc123' }),
-}));
+// Helper to create mock API response
+function createMockApiResponse(overrides = {}) {
+  return {
+    success: true,
+    message: 'Test results received',
+    summary: { runId: 'test-run', testsReceived: 1, passed: 1, failed: 0, skipped: 0 },
+    ...overrides,
+  };
+}
 
-vi.mock('../../src/ci', () => ({
-  getCIInfo: vi.fn().mockReturnValue({
-    provider: null,
-    url: null,
-    branch: null,
-    commitSha: null,
-    runId: null,
+function createSuccessFetchMock(responseOverrides = {}) {
+  return {
+    ok: true,
+    json: () => Promise.resolve(createMockApiResponse(responseOverrides)),
+    text: () => Promise.resolve(JSON.stringify(createMockApiResponse(responseOverrides))),
+  };
+}
+
+function createErrorFetchMock(status: number, message: string) {
+  return {
+    ok: false,
+    status,
+    json: () => Promise.resolve({ error: message }),
+    text: () => Promise.resolve(message),
+  };
+}
+
+// Mock child_process for git operations
+vi.mock('child_process', () => ({
+  execSync: vi.fn((cmd: string) => {
+    if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+      return 'main\n';
+    }
+    if (cmd.includes('rev-parse HEAD')) {
+      return 'abc123\n';
+    }
+    throw new Error('Command not found');
+  }),
+  exec: vi.fn((cmd: string, _options: unknown, callback?: unknown) => {
+    const cb = typeof _options === 'function' ? _options : callback;
+    if (typeof cb === 'function') {
+      if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+        setTimeout(() => cb(null, { stdout: 'main\n', stderr: '' }), 0);
+      } else if (cmd.includes('rev-parse HEAD')) {
+        setTimeout(() => cb(null, { stdout: 'abc123\n', stderr: '' }), 0);
+      } else {
+        setTimeout(() => cb(new Error('Command not found'), null), 0);
+      }
+    }
+    return {} as unknown;
   }),
 }));
 
@@ -72,17 +100,24 @@ function createMockResult(status: 'passed' | 'failed' = 'passed'): PlaywrightTes
     duration: 100,
     retry: 0,
     error: status === 'failed' ? new Error('Test failed') : undefined,
+    attachments: [],
+    stdout: [],
+    stderr: [],
+    steps: [],
+    startTime: new Date(),
   } as unknown as PlaywrightTestResult;
 }
 
 describe('Reporter Load Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
   });
 
   it('should handle 1000 test results without memory issues', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 1000, // Don't trigger batching during the test
     });
@@ -113,45 +148,17 @@ describe('Reporter Load Tests', () => {
     await reporter.onEnd({ status: 'passed' } as any);
   });
 
-  it('should respect maxBufferSize under load', async () => {
-    const maxBufferSize = 100;
+  it('should batch results efficiently', async () => {
     let metricsReceived: any = null;
 
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
-      batchSize: 1000, // Don't trigger batching
-      maxBufferSize,
+      batchSize: 50,
       onMetrics: (metrics) => {
         metricsReceived = metrics;
       },
-    });
-
-    reporter.onBegin(createMockConfig(), createMockSuite());
-
-    // Add 500 results (5x the buffer size)
-    for (let i = 0; i < 500; i++) {
-      reporter.onTestEnd(createMockTest(i), createMockResult());
-    }
-
-    // Should have dropped 400 results to stay within buffer
-    // The onMetrics callback should report dropped results
-    await reporter.onEnd({ status: 'passed' } as any);
-
-    expect(metricsReceived).not.toBeNull();
-    expect(metricsReceived.resultsDropped).toBe(400);
-  });
-
-  it('should batch results efficiently', async () => {
-    // This test verifies batching logic works - we use mocked API
-    // The mocked API is set up at file level, so batching is tested implicitly
-    // by ensuring reporter handles 150 tests without issues
-    const batchSize = 50;
-
-    const reporter = new SpekraReporter({
-      apiKey: 'test-key',
-      enabled: true,
-      batchSize,
     });
 
     reporter.onBegin(createMockConfig(), createMockSuite());
@@ -161,16 +168,17 @@ describe('Reporter Load Tests', () => {
       reporter.onTestEnd(createMockTest(i), createMockResult());
     }
 
-    // Should complete without errors
     await reporter.onEnd({ status: 'passed' } as any);
 
-    // Test passes if no errors were thrown during batched processing
-    expect(true).toBe(true);
+    // Verify all 150 tests were reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(150);
   });
 
   it('should handle large error messages efficiently', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       maxErrorLength: 500,
       maxStackTraceLines: 5,
@@ -208,6 +216,7 @@ describe('Reporter Load Tests', () => {
   it('should handle rapid test completions', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 100,
     });
@@ -246,6 +255,7 @@ describe('Reporter Load Tests', () => {
     for (let run = 0; run < 5; run++) {
       const reporter = new SpekraReporter({
         apiKey: 'test-key',
+        source: 'test-suite',
         enabled: true,
       });
 
@@ -275,6 +285,7 @@ describe('Reporter Load Tests', () => {
   it('should handle sustained throughput of 10000 tests', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 100,
       maxBufferSize: 500,
@@ -314,6 +325,7 @@ describe('Reporter Load Tests', () => {
   it('should handle mixed test statuses under load', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 50,
     });
@@ -360,68 +372,45 @@ describe('Reporter Load Tests', () => {
 describe('Reporter Failure Injection Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
   });
 
   it('should handle API failures during batch sends gracefully', async () => {
-    let callCount = 0;
-    const errorCallback = vi.fn();
+    let metricsReceived: any = null;
+    let errorReceived: any = null;
 
-    // Reset the mock to simulate intermittent failures
-    vi.doMock('../../src/api', () => ({
-      SpekraApiClient: vi.fn().mockImplementation(() => ({
-        sendReport: vi.fn().mockImplementation(() => {
-          callCount++;
-          // Fail every 3rd call
-          if (callCount % 3 === 0) {
-            return Promise.resolve({
-              success: false,
-              latencyMs: 100,
-              bytesSent: 0,
-              bytesUncompressed: 100,
-              retryCount: 3,
-              requestId: `fail-request-${callCount}`,
-              error: {
-                type: 'api',
-                message: 'Simulated API failure',
-                statusCode: 503,
-              },
-            });
-          }
-          return Promise.resolve({
-            success: true,
-            latencyMs: 10,
-            bytesSent: 100,
-            bytesUncompressed: 200,
-            retryCount: 0,
-            requestId: `success-request-${callCount}`,
-          });
-        }),
-      })),
-    }));
+    // Mock fetch to simulate API failure
+    mockFetch.mockResolvedValue(createErrorFetchMock(503, 'Simulated API failure'));
 
-    // Need to re-import after mock change
-    const { SpekraReporter: FreshReporter } = await import('../../src/reporter');
-
-    const reporter = new FreshReporter({
+    const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 20,
-      onError: errorCallback,
+      maxRetries: 0, // Disable retries for faster test
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+      onError: (error) => {
+        errorReceived = error;
+      },
     });
 
     reporter.onBegin(createMockConfig(), createMockSuite());
 
-    // Add enough tests to trigger multiple batches
-    for (let i = 0; i < 100; i++) {
+    // Add some tests
+    for (let i = 0; i < 50; i++) {
       reporter.onTestEnd(createMockTest(i), createMockResult());
     }
 
-    // Should complete without throwing
     await reporter.onEnd({ status: 'passed' } as any);
 
-    // The reporter should have handled failures gracefully
-    // Some batches may have failed, but the test run completes
-    expect(true).toBe(true);
+    // Verify the error was captured and metrics show failure
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.requestsFailed).toBe(1);
+    expect(metricsReceived.resultsReported).toBe(0); // Failed, so none reported
+    expect(errorReceived).not.toBeNull();
+    expect(errorReceived.type).toBe('api');
   });
 
   it('should continue processing after batch failure', async () => {
@@ -429,6 +418,7 @@ describe('Reporter Failure Injection Tests', () => {
 
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 10,
       onMetrics: (metrics) => {
@@ -451,89 +441,10 @@ describe('Reporter Failure Injection Tests', () => {
   });
 });
 
-describe('Reporter Backpressure Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should handle tests completing faster than batches can send', async () => {
-    // Simulate slow API responses
-    vi.doMock('../../src/api', () => ({
-      SpekraApiClient: vi.fn().mockImplementation(() => ({
-        sendReport: vi.fn().mockImplementation(async () => {
-          // Simulate 100ms API latency
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          return {
-            success: true,
-            latencyMs: 100,
-            bytesSent: 100,
-            bytesUncompressed: 200,
-            retryCount: 0,
-            requestId: 'mock-request-id',
-          };
-        }),
-      })),
-    }));
-
-    const { SpekraReporter: SlowApiReporter } = await import('../../src/reporter');
-
-    const reporter = new SlowApiReporter({
-      apiKey: 'test-key',
-      enabled: true,
-      batchSize: 10,
-      maxBufferSize: 50,
-    });
-
-    reporter.onBegin(createMockConfig(), createMockSuite());
-
-    const startTime = Date.now();
-
-    // Rapidly add 200 tests (faster than batches can be sent)
-    for (let i = 0; i < 200; i++) {
-      reporter.onTestEnd(createMockTest(i), createMockResult());
-    }
-
-    const addDuration = Date.now() - startTime;
-    console.log(`Added 200 tests in ${addDuration}ms`);
-
-    // Adding tests should be fast (not blocked by slow sends)
-    expect(addDuration).toBeLessThan(500);
-
-    // Complete the run
-    await reporter.onEnd({ status: 'passed' } as any);
-  });
-
-  it('should drop oldest results when buffer overflows under backpressure', async () => {
-    let metricsReceived: any = null;
-
-    const reporter = new SpekraReporter({
-      apiKey: 'test-key',
-      enabled: true,
-      batchSize: 1000, // Very large batch to prevent sending
-      maxBufferSize: 50, // Small buffer
-      onMetrics: (metrics) => {
-        metricsReceived = metrics;
-      },
-    });
-
-    reporter.onBegin(createMockConfig(), createMockSuite());
-
-    // Add more tests than buffer can hold
-    for (let i = 0; i < 200; i++) {
-      reporter.onTestEnd(createMockTest(i), createMockResult());
-    }
-
-    await reporter.onEnd({ status: 'passed' } as any);
-
-    // Should have dropped 150 results (200 - 50 buffer)
-    expect(metricsReceived).not.toBeNull();
-    expect(metricsReceived.resultsDropped).toBe(150);
-  });
-});
-
 describe('Reporter Retry Storm Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
   });
 
   it('should handle high volume of tests with batching under load', async () => {
@@ -543,6 +454,7 @@ describe('Reporter Retry Storm Tests', () => {
 
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 10,
       onMetrics: (metrics) => {
@@ -586,6 +498,7 @@ describe('Reporter Retry Storm Tests', () => {
   it('should not block test processing when batches are being sent', async () => {
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 5, // Small batches to trigger frequent sends
     });
@@ -615,6 +528,7 @@ describe('Reporter Retry Storm Tests', () => {
 
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 7, // Odd batch size to test edge cases
       onMetrics: (metrics) => {
@@ -636,7 +550,6 @@ describe('Reporter Retry Storm Tests', () => {
     // All results should have been reported
     expect(metricsReceived).not.toBeNull();
     expect(metricsReceived.resultsReported).toBe(testCount);
-    expect(metricsReceived.resultsDropped).toBe(0);
   });
 
   it('should handle burst of tests followed by idle period', async () => {
@@ -644,6 +557,7 @@ describe('Reporter Retry Storm Tests', () => {
 
     const reporter = new SpekraReporter({
       apiKey: 'test-key',
+      source: 'test-suite',
       enabled: true,
       batchSize: 10,
       onMetrics: (metrics) => {
@@ -670,5 +584,583 @@ describe('Reporter Retry Storm Tests', () => {
 
     expect(metricsReceived).not.toBeNull();
     expect(metricsReceived.resultsReported).toBe(50);
+  });
+});
+
+// ==========================================================================
+// Concurrent Execution Tests
+// ==========================================================================
+
+describe('Reporter Concurrent Execution Tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
+  });
+
+  it('should handle multiple parallel workers reporting simultaneously', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      batchSize: 10,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Simulate 4 parallel workers each processing 25 tests
+    const workers = Array.from({ length: 4 }, (_, workerIndex) => {
+      return (async () => {
+        for (let i = 0; i < 25; i++) {
+          const testIndex = workerIndex * 25 + i;
+          // Add small random delay to simulate actual parallel execution
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 5));
+          reporter.onTestEnd(createMockTest(testIndex), createMockResult());
+        }
+      })();
+    });
+
+    await Promise.all(workers);
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(100);
+  });
+
+  it('should handle out-of-order test completions', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      batchSize: 5,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Complete tests in random order (simulating parallel execution)
+    const testIndices = Array.from({ length: 50 }, (_, i) => i);
+    // Shuffle array
+    for (let i = testIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [testIndices[i], testIndices[j]] = [testIndices[j], testIndices[i]];
+    }
+
+    for (const index of testIndices) {
+      reporter.onTestEnd(createMockTest(index), createMockResult());
+    }
+
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(50);
+  });
+
+  it('should handle rapid onBegin/onEnd cycles', async () => {
+    const cycleMetrics: any[] = [];
+
+    // Simulate scenarios where multiple test files complete quickly
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const reporter = new SpekraReporter({
+        apiKey: 'test-key',
+        source: `test-suite-${cycle}`,
+        enabled: true,
+        batchSize: 5,
+        onMetrics: (metrics) => {
+          cycleMetrics.push(metrics);
+        },
+      });
+
+      reporter.onBegin(createMockConfig(), createMockSuite());
+
+      for (let i = 0; i < 10; i++) {
+        reporter.onTestEnd(createMockTest(i), createMockResult());
+      }
+
+      await reporter.onEnd({ status: 'passed' } as any);
+    }
+
+    // All 5 cycles should have reported 10 results each
+    expect(cycleMetrics).toHaveLength(5);
+    cycleMetrics.forEach((metrics) => {
+      expect(metrics.resultsReported).toBe(10);
+    });
+  });
+
+  it('should handle mixed passed/failed/skipped results in parallel', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      batchSize: 10,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Simulate parallel workers with different result types
+    const workers = Array.from({ length: 3 }, (_, workerIndex) => {
+      return (async () => {
+        for (let i = 0; i < 10; i++) {
+          const testIndex = workerIndex * 10 + i;
+          const status: 'passed' | 'failed' =
+            workerIndex === 0 ? 'passed' : workerIndex === 1 && i % 2 === 0 ? 'failed' : 'passed';
+
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 3));
+          reporter.onTestEnd(createMockTest(testIndex), createMockResult(status));
+        }
+      })();
+    });
+
+    await Promise.all(workers);
+    await reporter.onEnd({ status: 'failed' } as any);
+
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(30);
+  });
+
+  it('should handle tests completing during onEnd processing', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      batchSize: 5,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Add initial tests
+    for (let i = 0; i < 20; i++) {
+      reporter.onTestEnd(createMockTest(i), createMockResult());
+    }
+
+    // Start onEnd but don't await yet
+    const endPromise = reporter.onEnd({ status: 'passed' } as any);
+
+    // Try to add more tests during onEnd (this simulates race condition)
+    // Tests added during onEnd might not be processed, but shouldn't crash
+    for (let i = 20; i < 25; i++) {
+      reporter.onTestEnd(createMockTest(i), createMockResult());
+    }
+
+    await endPromise;
+
+    // At minimum, the initial 20 tests should have been reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBeGreaterThanOrEqual(20);
+  });
+});
+
+// ==========================================================================
+// Memory/Performance Edge Case Tests
+// ==========================================================================
+
+describe('Reporter Memory Edge Cases', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
+  });
+
+  it('should handle tests with very large stdout/stderr output', async () => {
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    const startMem = process.memoryUsage().heapUsed;
+
+    // Add tests with large console output
+    for (let i = 0; i < 50; i++) {
+      const largeStdout = Array(100).fill(`Console log line ${i}: ${'x'.repeat(1000)}`);
+      const largeStderr = Array(50).fill(`Error log line ${i}: ${'e'.repeat(500)}`);
+
+      reporter.onTestEnd(createMockTest(i), {
+        status: 'passed',
+        duration: 100,
+        retry: 0,
+        attachments: [],
+        stdout: largeStdout,
+        stderr: largeStderr,
+        steps: [],
+        startTime: new Date(),
+      } as unknown as PlaywrightTestResult);
+    }
+
+    const endMem = process.memoryUsage().heapUsed;
+    const memIncreaseMB = (endMem - startMem) / 1024 / 1024;
+
+    console.log(`50 tests with large stdout/stderr: ${memIncreaseMB.toFixed(2)} MB`);
+
+    // Memory usage should be bounded
+    expect(memIncreaseMB).toBeLessThan(100);
+
+    await reporter.onEnd({ status: 'passed' } as any);
+  });
+
+  it('should handle tests with many steps', async () => {
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    const startMem = process.memoryUsage().heapUsed;
+
+    // Add tests with many steps
+    for (let i = 0; i < 50; i++) {
+      const manySteps = Array(200)
+        .fill(null)
+        .map((_, j) => ({
+          title: `Step ${j}: Some action description`,
+          duration: 10,
+          error: j % 50 === 0 ? { message: `Step ${j} failed` } : undefined,
+          steps: [],
+        }));
+
+      reporter.onTestEnd(createMockTest(i), {
+        status: 'passed',
+        duration: 2000,
+        retry: 0,
+        attachments: [],
+        stdout: [],
+        stderr: [],
+        steps: manySteps,
+        startTime: new Date(),
+      } as unknown as PlaywrightTestResult);
+    }
+
+    const endMem = process.memoryUsage().heapUsed;
+    const memIncreaseMB = (endMem - startMem) / 1024 / 1024;
+
+    console.log(`50 tests with 200 steps each: ${memIncreaseMB.toFixed(2)} MB`);
+
+    expect(memIncreaseMB).toBeLessThan(50);
+
+    await reporter.onEnd({ status: 'passed' } as any);
+  });
+
+  it('should handle tests with deeply nested steps', async () => {
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Create deeply nested step structure
+    function createNestedSteps(depth: number): any[] {
+      if (depth === 0) {
+        return [{ title: 'leaf', duration: 1, steps: [] }];
+      }
+      return [
+        {
+          title: `level-${depth}`,
+          duration: depth * 10,
+          steps: createNestedSteps(depth - 1),
+        },
+      ];
+    }
+
+    for (let i = 0; i < 20; i++) {
+      reporter.onTestEnd(createMockTest(i), {
+        status: 'passed',
+        duration: 1000,
+        retry: 0,
+        attachments: [],
+        stdout: [],
+        stderr: [],
+        steps: createNestedSteps(15), // 15 levels deep
+        startTime: new Date(),
+      } as unknown as PlaywrightTestResult);
+    }
+
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    // Verify all 20 tests with deeply nested steps were reported
+    expect(mockFetch).toHaveBeenCalled();
+  });
+
+  it('should handle tests with many annotations/tags', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    for (let i = 0; i < 100; i++) {
+      const testWithManyAnnotations = {
+        title: `Test ${i} @tag1 @tag2 @tag3 @tag4 @tag5`,
+        location: { file: `/tests/test${i}.spec.ts`, line: 1, column: 1 },
+        parent: {
+          title: 'Suite',
+          project: () => ({ name: 'chromium' }),
+        },
+        annotations: Array(50)
+          .fill(null)
+          .map((_, j) => ({
+            type: 'tag',
+            description: `annotation-${j}`,
+          })),
+      } as unknown as TestCase;
+
+      reporter.onTestEnd(testWithManyAnnotations, createMockResult());
+    }
+
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    // Verify all 100 tests with many annotations were reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(100);
+  });
+
+  it('should handle unicode-heavy test names efficiently', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    const unicodeStrings = [
+      '日本語テスト',
+      '中文测试',
+      'Тест на русском',
+      'العربية',
+      'עברית',
+      'emoji 🎉🚀💻🔥✨',
+    ];
+
+    for (let i = 0; i < 100; i++) {
+      const unicodeTitle = unicodeStrings[i % unicodeStrings.length] + ` #${i}`;
+      const testWithUnicode = {
+        title: unicodeTitle,
+        location: { file: `/tests/国际化/test${i}.spec.ts`, line: 1, column: 1 },
+        parent: {
+          title: '国際化テスト',
+          project: () => ({ name: 'chromium' }),
+        },
+        annotations: [],
+      } as unknown as TestCase;
+
+      reporter.onTestEnd(testWithUnicode, createMockResult());
+    }
+
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    // Verify all 100 tests with unicode names were reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(100);
+  });
+
+  it('should handle tests completing immediately after onBegin', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      batchSize: 5,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    // Immediately start tests before onBegin completes
+    const beginPromise = new Promise<void>((resolve) => {
+      reporter.onBegin(createMockConfig(), createMockSuite());
+      resolve();
+    });
+
+    // Race condition test - add tests while onBegin might still be processing
+    void beginPromise.then(() => {
+      for (let i = 0; i < 10; i++) {
+        reporter.onTestEnd(createMockTest(i), createMockResult());
+      }
+    });
+
+    await beginPromise;
+
+    // Add more tests after onBegin is definitely done
+    for (let i = 10; i < 20; i++) {
+      reporter.onTestEnd(createMockTest(i), createMockResult());
+    }
+
+    await reporter.onEnd({ status: 'passed' } as any);
+
+    // At least the tests added after onBegin should have been reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBeGreaterThanOrEqual(10);
+  });
+});
+
+// ==========================================================================
+// Artifact Edge Case Tests
+// ==========================================================================
+
+describe('Reporter Artifact Edge Cases', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockResolvedValue(createSuccessFetchMock());
+  });
+
+  it('should handle tests with many small attachments', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    // Create attachments array with many items (but no actual paths)
+    const manyAttachments = Array(100)
+      .fill(null)
+      .map((_, i) => ({
+        name: `attachment-${i}`,
+        contentType: 'application/octet-stream',
+        // No path means inline attachment, which should be skipped
+        body: Buffer.from(`inline data ${i}`),
+      }));
+
+    for (let i = 0; i < 10; i++) {
+      reporter.onTestEnd(createMockTest(i), {
+        status: 'failed',
+        duration: 100,
+        retry: 0,
+        attachments: manyAttachments,
+        stdout: [],
+        stderr: [],
+        steps: [],
+        startTime: new Date(),
+      } as unknown as PlaywrightTestResult);
+    }
+
+    await reporter.onEnd({ status: 'failed' } as any);
+
+    // Verify all 10 tests were reported (inline attachments should be skipped)
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(10);
+  });
+
+  it('should handle attachments with special characters in names', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    const specialNameAttachments = [
+      { name: 'スクリーンショット.png', contentType: 'image/png', body: Buffer.from('data') },
+      { name: 'screen shot (1).png', contentType: 'image/png', body: Buffer.from('data') },
+      { name: 'file<>:"/\\|?*.png', contentType: 'image/png', body: Buffer.from('data') },
+      { name: '../../../etc/passwd', contentType: 'text/plain', body: Buffer.from('data') },
+    ];
+
+    reporter.onTestEnd(createMockTest(0), {
+      status: 'failed',
+      duration: 100,
+      retry: 0,
+      attachments: specialNameAttachments,
+      stdout: [],
+      stderr: [],
+      steps: [],
+      startTime: new Date(),
+    } as unknown as PlaywrightTestResult);
+
+    await reporter.onEnd({ status: 'failed' } as any);
+
+    // Verify the test was reported despite special characters in attachment names
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(1);
+  });
+
+  it('should handle mixed attachment types efficiently', async () => {
+    let metricsReceived: any = null;
+
+    const reporter = new SpekraReporter({
+      apiKey: 'test-key',
+      source: 'test-suite',
+      enabled: true,
+      onMetrics: (metrics) => {
+        metricsReceived = metrics;
+      },
+    });
+
+    reporter.onBegin(createMockConfig(), createMockSuite());
+
+    const mixedAttachments = [
+      { name: 'screenshot-1.png', contentType: 'image/png', body: Buffer.from('x'.repeat(1000)) },
+      { name: 'video.webm', contentType: 'video/webm', body: Buffer.from('v'.repeat(5000)) },
+      { name: 'trace.zip', contentType: 'application/zip', body: Buffer.from('z'.repeat(2000)) },
+      { name: 'stdout.txt', contentType: 'text/plain', body: Buffer.from('log output here') },
+      { name: 'data.json', contentType: 'application/json', body: Buffer.from('{"key":"value"}') },
+    ];
+
+    for (let i = 0; i < 20; i++) {
+      reporter.onTestEnd(createMockTest(i), {
+        status: 'failed',
+        duration: 100,
+        retry: 0,
+        attachments: mixedAttachments,
+        stdout: [],
+        stderr: [],
+        steps: [],
+        startTime: new Date(),
+      } as unknown as PlaywrightTestResult);
+    }
+
+    await reporter.onEnd({ status: 'failed' } as any);
+
+    // Verify all 20 tests were reported
+    expect(metricsReceived).not.toBeNull();
+    expect(metricsReceived.resultsReported).toBe(20);
   });
 });

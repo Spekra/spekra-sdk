@@ -17,6 +17,7 @@ A lightweight Playwright test reporter that sends test results to the [Spekra](h
   - [Retry Configuration](#retry-configuration)
   - [Error Handling](#error-handling)
   - [Memory Management](#memory-management)
+  - [PII Redaction](#pii-redaction)
   - [Callbacks](#callbacks)
 - [Environment Variables](#environment-variables)
 - [CI Integration](#ci-integration)
@@ -31,8 +32,10 @@ A lightweight Playwright test reporter that sends test results to the [Spekra](h
 
 - **🚀 Simple Setup** - Just 3 lines of configuration
 - **🛡️ Never Breaks Tests** - All errors are caught and logged, never thrown
-- **🔍 Smart Detection** - Automatically detects Git info, CI environment, and shards
-- **🔒 Privacy-Conscious** - Only sends test metadata, not source code
+- **🔍 Smart Detection** - Automatically detects Git info, CI environment, projects, and shards
+- **🏷️ Tag Support** - Captures tags from Playwright annotations and inline @tags
+- **📂 Suite Tracking** - Preserves describe block hierarchy for filtering
+- **🔒 PII Redaction** - Automatically scrubs sensitive data client-side before upload
 - **📦 Batched Sending** - Efficiently batches results to minimize API calls
 - **⚡ Zero Impact** - No effect on test execution time or reliability
 - **🔄 Automatic Retries** - Exponential backoff with jitter for resilient delivery
@@ -77,9 +80,9 @@ That's it! Run your tests and results will appear in Spekra.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| [`projectName`](#projectname) | `string` | From Playwright config | Override project name |
 | [`enabled`](#enabled) | `boolean` | `true` | Enable/disable reporting |
 | [`debug`](#debug) | `boolean` | `false` | Verbose logging |
+| [`redact`](#pii-redaction) | `boolean \| array \| object` | `true` | PII/secrets redaction |
 | [`batchSize`](#batchsize) | `number` | `20` | Results per batch (1-1000) |
 | [`timeout`](#timeout) | `number` | `15000` | Request timeout in ms |
 | [`maxRetries`](#retry-configuration) | `number` | `3` | Retry attempts (0 to disable) |
@@ -100,14 +103,6 @@ Your Spekra API key. Can also be set via `SPEKRA_API_KEY` environment variable. 
 
 ```typescript
 { apiKey: process.env.SPEKRA_API_KEY }
-```
-
-#### `projectName`
-
-Override the project name (defaults to Playwright project name). This is not recommended if you run multiple Playwright projects as it will result in what looks like duplicate test cases.
-
-```typescript
-{ projectName: 'my-app-e2e' }
 ```
 
 #### `enabled`
@@ -194,6 +189,93 @@ When the buffer is full, oldest results are dropped to make room for new ones. A
 { maxBufferSize: 500 }
 ```
 
+### PII Redaction
+
+The SDK automatically redacts sensitive data from error messages, console output, and URLs **before** any data leaves your machine. This is a critical security feature that ensures PII (Personally Identifiable Information) and secrets are never sent to Spekra.
+
+#### Built-in Patterns
+
+By default, the SDK redacts:
+- **Email addresses** - `user@example.com` → `[REDACTED]`
+- **JWT tokens** - `eyJhbG...` → `[REDACTED]`
+- **Bearer tokens** - `Bearer abc...` → `[REDACTED]`
+- **Credit card numbers** - `4111-1111-1111-1111` → `[REDACTED]`
+- **SSNs** - `123-45-6789` → `[REDACTED]`
+- **Phone numbers** - `(555) 123-4567` → `[REDACTED]`
+- **AWS access keys** - `AKIAIOSFODNN...` → `[REDACTED]`
+- **GitHub tokens** - `ghp_xxx...` → `[REDACTED]`
+- **API keys** - Common patterns like `sk_live_...`, `api_key_...`
+- **URL credentials** - `postgres://user:pass@host` → credentials redacted
+
+#### Configuration Options
+
+The `redact` option accepts several formats:
+
+```typescript
+// Default: enabled with built-in patterns
+{ redact: true }
+
+// Disable redaction entirely (not recommended)
+{ redact: false }
+
+// Add custom patterns to built-in patterns
+{ redact: ['password', 'internal-secret', /company-id-\d+/] }
+
+// Full configuration object
+{
+  redact: {
+    enabled: true,
+    patterns: ['custom-secret', /internal-\w+/],
+    replaceBuiltIn: false  // Set true to ONLY use your patterns
+  }
+}
+```
+
+#### Custom Patterns
+
+Add patterns specific to your application:
+
+```typescript
+{
+  redact: [
+    'my-company-secret',           // String (case-insensitive match)
+    /internal-id-[A-Z0-9]+/g,     // RegExp for complex patterns
+    /customer-\d{6}/gi,           // Customer IDs
+  ]
+}
+```
+
+String patterns are automatically escaped and matched case-insensitively. RegExp patterns are used as-is.
+
+#### Example: E-commerce Application
+
+```typescript
+{
+  redact: [
+    'stripe_secret',              // Stripe API keys
+    /order-[A-Z0-9]{8}/g,        // Order IDs
+    /customer-\d+/g,              // Customer IDs
+    /session-[a-f0-9-]+/g,       // Session tokens
+  ]
+}
+```
+
+#### Replacing Built-in Patterns
+
+If you need complete control over redaction (use with caution):
+
+```typescript
+{
+  redact: {
+    enabled: true,
+    patterns: [/only-redact-this/g],
+    replaceBuiltIn: true  // Disables all built-in patterns
+  }
+}
+```
+
+> ⚠️ **Warning**: Replacing built-in patterns removes default PII protection. Only do this if you have specific requirements and understand the security implications.
+
 ### Callbacks
 
 Hook into reporter events for custom alerting or metrics collection.
@@ -256,11 +338,13 @@ export default defineConfig({
         
         // Basic options
         apiUrl: 'https://spekra.dev/api/reports',
-        projectName: 'my-app-e2e',
         enabled: process.env.CI === 'true',
         debug: false,
         batchSize: 20,
         timeout: 15000,
+        
+        // PII redaction (default: true with built-in patterns)
+        redact: ['custom-secret', /internal-id-\d+/],
         
         // Retry configuration
         maxRetries: 3,
@@ -346,16 +430,26 @@ jobs:
 
 ### Sensitive Data in Error Messages
 
-Test assertion failures may include sensitive data in error messages. If your tests involve:
-- User credentials or tokens
-- Personal identifiable information (PII)
-- API keys or secrets
+Test assertion failures may include sensitive data in error messages. The SDK automatically redacts common PII patterns **client-side before upload**, including:
+- Email addresses, phone numbers, SSNs
+- JWT tokens, API keys, Bearer tokens
+- Credit card numbers, AWS keys, GitHub tokens
 
-Consider sanitizing test data or using the `maxErrorLength` option to limit exposure:
+For additional protection, add custom patterns for your application:
+
+```typescript
+{
+  redact: ['internal-secret', /customer-id-\d+/g]
+}
+```
+
+You can also limit error message length:
 
 ```typescript
 { maxErrorLength: 500 }  // Limit error message length
 ```
+
+See [PII Redaction](#pii-redaction) for full configuration options.
 
 ### Data Privacy
 
@@ -375,12 +469,11 @@ The SDK only sends test metadata (file paths, test names, durations, error messa
 
 ## What Data is Sent
 
-The reporter sends only test metadata:
+The reporter sends only test metadata. Each test result includes structured information about the test, its suite hierarchy, tags, and project:
 
 ```typescript
 {
   runId: "run-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  project: "chromium",
   branch: "main",
   commitSha: "a1b2c3d4e5f6...",
   ciUrl: "https://github.com/org/repo/actions/runs/12345",
@@ -391,7 +484,11 @@ The reporter sends only test metadata:
   results: [
     {
       testFile: "auth/login.spec.ts",
-      testTitle: "Login > should login with valid credentials",
+      fullTitle: "Login > should login with valid credentials",
+      suitePath: ["Login"],
+      testName: "should login with valid credentials",
+      tags: ["@smoke", "@P0"],
+      project: "chromium",
       status: "passed",
       durationMs: 2340,
       retry: 0,
@@ -400,6 +497,15 @@ The reporter sends only test metadata:
   ]
 }
 ```
+
+### Automatic Data Capture
+
+The reporter automatically extracts:
+- **Project name** from each test's Playwright project configuration
+- **Suite path** from describe block hierarchy
+- **Tags** from Playwright annotations (1.42+) and inline `@tag` patterns in titles
+- **Git info** (branch, commit SHA) from local git or CI environment
+- **CI info** (job URL, run ID) from supported CI providers
 
 ## Troubleshooting
 
@@ -452,7 +558,7 @@ Enable verbose logging to troubleshoot issues:
 ```
 
 This logs:
-- Run ID and project name
+- Run ID
 - Git branch and commit
 - CI provider and URL
 - Shard information
@@ -463,7 +569,7 @@ This logs:
 ## Requirements
 
 - Node.js >= 20.0.0
-- Playwright >= 1.40.0
+- Playwright >= 1.44.0
 
 ## License
 

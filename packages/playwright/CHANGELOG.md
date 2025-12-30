@@ -9,4 +9,4 @@
   - CI environment detection (GitHub Actions, GitLab CI, CircleCI, etc.)
   - Git metadata extraction (branch, commit SHA)
   - Configurable batching and retry logic
-  - Support for Playwright 1.40+
+  - Support for Playwright 1.44+

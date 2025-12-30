@@ -101,10 +101,36 @@
             "description": "Relative path to the test file",
             "example": "auth/login.spec.ts"
           },
-          "testTitle": {
+          "fullTitle": {
             "type": "string",
-            "description": "Full test title including describe blocks",
+            "description": "Full test title including describe blocks (without tags)",
             "example": "Login > should authenticate with valid credentials"
+          },
+          "suitePath": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of describe block titles forming the suite hierarchy",
+            "example": ["Login", "Valid Credentials"]
+          },
+          "testName": {
+            "type": "string",
+            "description": "Individual test name without describe blocks",
+            "example": "should authenticate successfully"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of tags associated with the test",
+            "example": ["@auth", "@smoke"]
+          },
+          "project": {
+            "type": "string",
+            "description": "Playwright project name",
+            "example": "chromium"
           },
           "status": {
             "type": "string",
@@ -132,7 +158,7 @@
             "example": "Expected element to be visible"
           }
         },
-        "required": ["testFile", "testTitle", "status", "durationMs"]
+        "required": ["testFile", "fullTitle", "suitePath", "testName", "tags", "project", "status", "durationMs"]
       },
       "ReportPayload": {
         "type": "object",
@@ -142,11 +168,6 @@
             "minLength": 1,
             "description": "Unique identifier for this test run",
             "example": "ci-12345678"
-          },
-          "project": {
-            "type": "string",
-            "description": "Playwright project name",
-            "example": "chromium"
           },
           "branch": {
             "type": "string",
