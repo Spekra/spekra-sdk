@@ -29,7 +29,7 @@ jobs:
     uses: ./.github/workflows/test.yml
     with:
       node-versions: '["20", "22"]'
-      playwright-versions: '["1.40", "1.44", "1.48"]'
+      playwright-versions: '["1.44", "1.48"]'
       run-fixtures: true
     secrets: inherit
 
