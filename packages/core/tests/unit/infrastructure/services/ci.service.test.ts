@@ -395,7 +395,7 @@ describe('CIService', () => {
 
     it('handles partial URL components for GitHub (missing server)', () => {
       process.env.GITHUB_ACTIONS = 'true';
-      // Missing GITHUB_SERVER_URL
+      delete process.env.GITHUB_SERVER_URL; // Explicitly remove (may be set by CI runner)
       process.env.GITHUB_REPOSITORY = 'owner/repo';
       process.env.GITHUB_RUN_ID = '12345';
       
@@ -408,7 +408,7 @@ describe('CIService', () => {
     it('handles partial URL components for GitHub (missing repo)', () => {
       process.env.GITHUB_ACTIONS = 'true';
       process.env.GITHUB_SERVER_URL = 'https://github.com';
-      // Missing GITHUB_REPOSITORY
+      delete process.env.GITHUB_REPOSITORY; // Explicitly remove (may be set by CI runner)
       process.env.GITHUB_RUN_ID = '12345';
       
       const service = new CIService();
