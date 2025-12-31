@@ -1,13 +1,24 @@
 import { randomUUID } from 'crypto';
 import type { FullConfig } from '@playwright/test/reporter';
 
-import type { CIInfo, GitInfo, ShardInfo } from '../../types';
-import type { RunMetadata } from '../../use-cases/send-report.use-case';
-import { CIService } from './ci.service';
-import { GitService } from './git.service';
+import type { CIInfo, GitInfo, ShardInfo, Framework } from '@spekra/core';
+import { CIService, GitService } from '@spekra/core';
 
-// Re-export RunMetadata from use case for type consistency
-export type { RunMetadata } from '../../use-cases/send-report.use-case';
+/**
+ * Run metadata for the report (Playwright-specific with framework)
+ */
+export interface RunMetadata {
+  runId: string;
+  source: string;
+  framework: Framework;
+  branch: string | null;
+  commitSha: string | null;
+  ciUrl: string | null;
+  shardIndex: number | null;
+  totalShards: number | null;
+  startedAt: string;
+  finishedAt: string | null;
+}
 
 /**
  * Manages test run metadata: run ID, shard info, git/CI info resolution.
@@ -72,6 +83,7 @@ export class RunMetadataService {
     return {
       runId: this.runId,
       source: this.source,
+      framework: 'playwright',
       branch: this.getBranch(),
       commitSha: this.getCommitSha(),
       ciUrl: this.ciInfo.url,

@@ -39,26 +39,29 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rm -rf dist node_modules pnpm-lock.yaml",
-    "refresh": "pnpm clean && pnpm install",
     "build": "tsdown",
+    "clean": "rm -rf dist node_modules pnpm-lock.yaml",
     "dev": "tsdown --watch",
-    "test": "vitest run",
-    "test:unit": "vitest run tests/unit",
-    "test:integration": "vitest run tests/integration",
-    "test:load": "vitest run tests/load",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
-    "lint": "eslint src tests",
-    "lint:fix": "eslint src tests --fix",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts'",
-    "size": "size-limit",
     "generate:types": "openapi-typescript openapi.json -o tests/generated/api-types.ts",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "prepublishOnly": "pnpm build && pnpm size",
     "prism:start": "prism mock openapi.json --port 4010 --host 127.0.0.1",
-    "prepublishOnly": "pnpm build && pnpm size"
+    "refresh": "pnpm clean && pnpm install",
+    "size": "size-limit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run tests/integration",
+    "test:load": "vitest run tests/load",
+    "test:unit": "vitest run tests/unit",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@spekra/core": "workspace:*"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.44.0"

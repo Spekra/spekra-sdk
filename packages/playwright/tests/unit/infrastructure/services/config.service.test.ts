@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ConfigService } from '../../../../src/infrastructure/services/config.service';
-import { LoggerService } from '../../../../src/infrastructure/services/logger.service';
+import type { LoggerService } from '@spekra/core';
 
 // Mock logger
 function createMockLogger(): LoggerService {

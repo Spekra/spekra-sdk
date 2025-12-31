@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CollectTestResultUseCase } from '../../../src/use-cases/collect-test-result.use-case';
-import type { LoggerService } from '../../../src/infrastructure/services/logger.service';
-import type { RedactionService } from '../../../src/infrastructure/services/redaction.service';
+import type { LoggerService, RedactionService } from '@spekra/core';
 import type { TestCase, TestResult as PlaywrightTestResult } from '@playwright/test/reporter';
 
 // Mock logger

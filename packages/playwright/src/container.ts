@@ -1,20 +1,17 @@
 import type { ResolvedConfig } from './types';
-
-// Services
-import { LoggerService } from './infrastructure/services/logger.service';
-import { RedactionService } from './infrastructure/services/redaction.service';
+import { LoggerService, RedactionService } from '@spekra/core';
+import { ApiClient } from '@spekra/core';
 import { CompressionService } from './infrastructure/services/compression.service';
-
-// Clients
-import { ApiClient } from './infrastructure/clients/api.client';
 import { UploadClient } from './infrastructure/clients/upload.client';
-
-// Use Cases
 import { CollectTestResultUseCase } from './use-cases/collect-test-result.use-case';
 import { SendReportUseCase } from './use-cases/send-report.use-case';
 import { UploadArtifactsUseCase } from './use-cases/upload-artifacts.use-case';
 
 import { DEFAULTS } from './infrastructure/services/config.service';
+
+// SDK version - injected at build time from package.json
+declare const __SDK_VERSION__: string;
+const SDK_VERSION = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : '0.0.0-dev';
 
 /**
  * Container holding all initialized services and use cases
@@ -47,7 +44,7 @@ export function createContainer(config: ResolvedConfig): Container {
   const redactionService = new RedactionService(config.redaction, logger);
   const compressionService = new CompressionService(logger);
 
-  // Clients
+  // API Client (from core, configured for Playwright)
   const apiClient = new ApiClient(
     {
       apiKey: config.apiKey,
@@ -56,6 +53,9 @@ export function createContainer(config: ResolvedConfig): Container {
       maxRetries: config.maxRetries,
       retryBaseDelayMs: config.retryBaseDelayMs,
       retryMaxDelayMs: config.retryMaxDelayMs,
+      framework: 'playwright',
+      sdkVersion: SDK_VERSION,
+      compression: true, // Playwright uses compression
     },
     logger
   );

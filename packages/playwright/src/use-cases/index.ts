@@ -1,4 +1,3 @@
-export { BaseUseCase, type UseCaseResult } from './base.use-case';
 export {
   CollectTestResultUseCase,
   type CollectTestResultInput,
@@ -9,7 +8,6 @@ export {
   SendReportUseCase,
   type SendReportInput,
   type SendReportOutput,
-  type RunMetadata,
 } from './send-report.use-case';
 export {
   UploadArtifactsUseCase,

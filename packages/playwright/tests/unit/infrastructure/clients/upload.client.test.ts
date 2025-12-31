@@ -3,7 +3,7 @@ import {
   UploadClient,
   type UploadTask,
 } from '../../../../src/infrastructure/clients/upload.client';
-import type { LoggerService } from '../../../../src/infrastructure/services/logger.service';
+import type { LoggerService } from '@spekra/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';

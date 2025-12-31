@@ -11,6 +11,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Lint dependency versions across packages
+  lint-deps:
+    name: Lint Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check dependency versions
+        run: pnpm lint:deps
+
   # Quick tests for regular PRs and pushes
   quick-test:
     name: Quick Test
@@ -19,6 +42,7 @@ jobs:
     with:
       node-versions: '["22"]'
       playwright-versions: '["1.48"]'
+      jest-versions: '["29"]'
       run-fixtures: false
     secrets: inherit
 
@@ -30,6 +54,7 @@ jobs:
     with:
       node-versions: '["20", "22"]'
       playwright-versions: '["1.44", "1.48"]'
+      jest-versions: '["29"]'
       run-fixtures: true
     secrets: inherit
 

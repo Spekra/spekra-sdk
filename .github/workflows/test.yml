@@ -11,14 +11,19 @@ on:
         description: 'JSON array of Playwright versions to test'
         type: string
         default: '["1.48"]'
+      jest-versions:
+        description: 'JSON array of Jest versions to test'
+        type: string
+        default: '["29"]'
       run-fixtures:
-        description: 'Whether to run Playwright fixture tests'
+        description: 'Whether to run fixture tests'
         type: boolean
         default: false
 
 jobs:
-  unit-and-integration:
-    name: Test (Node ${{ matrix.node }})
+  # Core package tests (shared utilities)
+  core-tests:
+    name: Core Tests (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -40,17 +45,51 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Build core
+        run: pnpm --filter @spekra/core build
 
-      - name: Typecheck tests
-        run: pnpm typecheck:tests
+      - name: Test core
+        run: pnpm --filter @spekra/core test
 
-      - name: Lint
-        run: pnpm lint
+      - name: Typecheck core
+        run: pnpm --filter @spekra/core typecheck
+
+  # Playwright reporter tests
+  playwright-tests:
+    name: Playwright Tests (Node ${{ matrix.node }})
+    needs: core-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm build
+        run: pnpm --filter @spekra/core --filter @spekra/playwright build
+
+      - name: Typecheck
+        run: pnpm --filter @spekra/playwright typecheck
+
+      - name: Typecheck tests
+        run: pnpm --filter @spekra/playwright typecheck:tests
+
+      - name: Lint
+        run: pnpm --filter @spekra/playwright lint
 
       - name: Start Prism mock server
         working-directory: packages/playwright
@@ -68,6 +107,9 @@ jobs:
       - name: Test with coverage
         run: pnpm --filter @spekra/playwright test:coverage
 
+      - name: Check bundle size
+        run: pnpm --filter @spekra/playwright size
+
       - name: Upload coverage to Codecov
         if: matrix.node == '22'
         uses: codecov/codecov-action@v4
@@ -79,9 +121,51 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  # Jest reporter tests
+  jest-tests:
+    name: Jest Tests (Node ${{ matrix.node }})
+    needs: core-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @spekra/core --filter @spekra/jest build
+
+      - name: Typecheck
+        run: pnpm --filter @spekra/jest typecheck
+
+      - name: Lint
+        run: pnpm --filter @spekra/jest lint
+
+      - name: Test
+        run: pnpm --filter @spekra/jest test
+
+      - name: Check bundle size
+        run: pnpm --filter @spekra/jest size
+
+  # Playwright fixture tests (full matrix)
   playwright-fixtures:
-    name: Fixtures (Node ${{ matrix.node }}, PW ${{ matrix.playwright }})
+    name: PW Fixtures (Node ${{ matrix.node }}, PW ${{ matrix.playwright }})
     if: inputs.run-fixtures
+    needs: playwright-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -105,7 +189,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build @spekra/playwright
-        run: pnpm --filter @spekra/playwright build
+        run: pnpm --filter @spekra/core --filter @spekra/playwright build
 
       - name: Install fixture dependencies
         working-directory: packages/test-fixtures/playwright-${{ matrix.playwright }}
@@ -120,4 +204,46 @@ jobs:
         env:
           SPEKRA_API_KEY: test-fixture-key
           SPEKRA_API_URL: http://localhost:3000/api/reports
-          # Mock server would be started here in a real setup
+
+  # Jest fixture tests (full matrix)
+  jest-fixtures:
+    name: Jest Fixtures (Node ${{ matrix.node }}, Jest ${{ matrix.jest }})
+    if: inputs.run-fixtures
+    needs: jest-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+        jest: ${{ fromJson(inputs.jest-versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @spekra/jest
+        run: pnpm --filter @spekra/core --filter @spekra/jest build
+
+      - name: Install fixture dependencies
+        working-directory: packages/test-fixtures/jest-${{ matrix.jest }}
+        run: |
+          # Override Jest version for this fixture
+          pnpm add -D jest@${{ matrix.jest }} @types/jest@${{ matrix.jest }} ts-jest@${{ matrix.jest }}
+
+      - name: Run fixture tests
+        working-directory: packages/test-fixtures/jest-${{ matrix.jest }}
+        run: pnpm test
+        env:
+          SPEKRA_API_KEY: test-fixture-key
+          SPEKRA_API_URL: http://localhost:3000/api/reports

@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { BaseClient, type ClientConfig } from './base.client';
-import { LoggerService } from '../services/logger.service';
+import { BaseClient, type ClientConfig, LoggerService } from '@spekra/core';
 
 /**
  * Upload client configuration
