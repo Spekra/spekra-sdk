@@ -1,6 +1,12 @@
 import { defineConfig } from 'tsdown';
-import { baseConfig } from '../../tsdown.config.base';
 
 export default defineConfig({
-  ...baseConfig,
+  entry: ['src/index.ts'],
+  format: ['cjs', 'esm'],
+  dts: true,
+  clean: true,
+  sourcemap: true,
+  treeshake: true,
+  minify: false,
+  target: false,
 });
