@@ -34,22 +34,9 @@ jobs:
       - name: Check dependency versions
         run: pnpm lint:deps
 
-  # Quick tests for regular PRs and pushes
-  quick-test:
-    name: Quick Test
-    if: ${{ !startsWith(github.head_ref || '', 'changeset-release/') }}
-    uses: ./.github/workflows/test.yml
-    with:
-      node-versions: '["22"]'
-      playwright-versions: '["1.48"]'
-      jest-versions: '["29"]'
-      run-fixtures: false
-    secrets: inherit
-
-  # Full matrix for Changesets release PRs
-  full-matrix-test:
-    name: Full Matrix Test
-    if: ${{ startsWith(github.head_ref || '', 'changeset-release/') }}
+  # Full matrix tests on all PRs (free for open source)
+  test:
+    name: Test
     uses: ./.github/workflows/test.yml
     with:
       node-versions: '["20", "22"]'
