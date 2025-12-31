@@ -1,13 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RunMetadataService } from '../../../../src/infrastructure/services/run-metadata.service';
-import { CIService } from '../../../../src/infrastructure/services/ci.service';
-import { GitService } from '../../../../src/infrastructure/services/git.service';
+import { CIService, GitService } from '@spekra/core';
 import type { FullConfig } from '@playwright/test/reporter';
-import type { CIProvider } from '../../../../src/types';
 
-// Mock the services
-vi.mock('../../../../src/infrastructure/services/ci.service');
-vi.mock('../../../../src/infrastructure/services/git.service');
+// Mock the services from core
+vi.mock('@spekra/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@spekra/core')>();
+  return {
+    ...actual,
+    CIService: {
+      instance: vi.fn(),
+    },
+    GitService: {
+      instance: vi.fn(),
+    },
+  };
+});
 
 describe('RunMetadataService', () => {
   let mockCIService: CIService;
@@ -201,7 +209,7 @@ describe('RunMetadataService', () => {
   describe('getCIInfo', () => {
     it('should return CI info', () => {
       const expectedCIInfo = {
-        provider: 'gitlab-ci' as CIProvider,
+        provider: 'gitlab-ci' as any,
         url: 'https://gitlab.com',
         branch: 'develop',
         commitSha: 'def456',

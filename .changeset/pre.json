@@ -5,7 +5,10 @@
     "@spekra/playwright": "0.0.0",
     "@spekra/test-fixture-pw-1.40": "0.0.0",
     "@spekra/test-fixture-pw-1.44": "0.0.0",
-    "@spekra/test-fixture-pw-1.48": "0.0.0"
+    "@spekra/test-fixture-pw-1.48": "0.0.0",
+    "@spekra/core": "0.0.0",
+    "@spekra/jest": "0.0.0",
+    "@spekra/test-fixture-jest-29": "0.0.0"
   },
   "changesets": [
     "common-turkeys-say",

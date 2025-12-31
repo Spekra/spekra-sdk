@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CompressionService } from '../../../../src/infrastructure/services/compression.service';
-import { LoggerService } from '../../../../src/infrastructure/services/logger.service';
+import type { LoggerService } from '@spekra/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';

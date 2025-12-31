@@ -1,8 +1,7 @@
 import { gzipSync } from 'zlib';
 import * as fs from 'fs';
 import * as path from 'path';
-import { BaseService } from './base.service';
-import { LoggerService } from './logger.service';
+import { BaseService, LoggerService } from '@spekra/core';
 
 /**
  * Result of compression operation

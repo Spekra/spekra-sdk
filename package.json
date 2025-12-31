@@ -1,34 +1,18 @@
 {
   "name": "spekra-sdk",
   "version": "0.0.0",
-  "private": true,
   "description": "Spekra SDK monorepo",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Spekra/spekra-sdk.git"
-  },
-  "scripts": {
-    "clean": "pnpm -r clean && rm -rf node_modules pnpm-lock.yaml && pnpm store prune",
-    "refresh": "pnpm -r refresh && pnpm install",
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "test:watch": "pnpm -r test:watch",
-    "test:coverage": "pnpm -r test:coverage",
-    "typecheck": "pnpm -r typecheck",
-    "typecheck:tests": "pnpm -r typecheck:tests",
-    "lint": "pnpm -r lint",
-    "changeset": "changeset",
-    "changeset:version": "changeset version",
-    "changeset:publish": "pnpm build && changeset publish --access public",
-    "changeset:empty": "pnpm changeset add --empty",
-    "prerelease:enter": "changeset pre enter alpha",
-    "prerelease:exit": "changeset pre exit",
-    "prepare": "husky"
-  },
+  "private": true,
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
+    "defu": "^6.1.4",
     "husky": "^9.0.0",
-    "lint-staged": "^15.2.0"
+    "lint-staged": "^15.2.0",
+    "syncpack": "^13.0.4",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "lint-staged": {
     "packages/playwright/src/**/*.ts": [
@@ -40,8 +24,27 @@
       "prettier --write"
     ]
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.0",
+  "repository": "Spekra/spekra-sdk.git",
+  "scripts": {
+    "build": "pnpm -r build",
+    "changeset": "changeset",
+    "changeset:empty": "pnpm changeset add --empty",
+    "changeset:publish": "pnpm build && changeset publish --access public",
+    "changeset:version": "changeset version",
+    "clean": "pnpm -r clean && rm -rf node_modules pnpm-lock.yaml && pnpm store prune",
+    "lint": "pnpm -r lint",
+    "lint:deps": "syncpack lint",
+    "lint:deps:fix": "syncpack fix-mismatches && syncpack format",
+    "postbuild": "pnpm install --frozen-lockfile",
+    "prepare": "husky",
+    "prerelease:enter": "changeset pre enter alpha",
+    "prerelease:exit": "changeset pre exit",
+    "refresh": "pnpm -r refresh && pnpm install",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
+    "test:watch": "pnpm -r test:watch",
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:tests": "pnpm -r typecheck:tests"
+  }
 }

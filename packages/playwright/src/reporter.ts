@@ -6,8 +6,8 @@ import type {
   TestCase,
   TestResult as PlaywrightTestResult,
 } from '@playwright/test/reporter';
-
-import type { ResolvedConfig, SpekraError, SpekraMetrics, SpekraReporterOptions } from './types';
+import type { ResolvedConfig, SpekraReporterOptions } from './types';
+import type { SpekraMetrics, SpekraError } from '@spekra/core';
 
 // Container
 import { type Container, createContainer } from './container';

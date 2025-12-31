@@ -2,15 +2,17 @@ export { SpekraReporter } from './reporter';
 export type {
   CIInfo,
   CIProvider,
+  Framework,
   GitInfo,
   RedactionOptions,
   RedactionPattern,
   ReportPayload,
   ShardInfo,
-  SpekraReporterOptions,
   TestResult,
   TestStatus,
-} from './types';
+} from '@spekra/core';
+
+export type { SpekraReporterOptions } from './types';
 
 // Default export for Playwright reporter configuration
 export { SpekraReporter as default } from './reporter';
