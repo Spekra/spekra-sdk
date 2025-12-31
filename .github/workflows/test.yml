@@ -57,7 +57,6 @@ jobs:
   # Playwright reporter tests
   playwright-tests:
     name: Playwright Tests (Node ${{ matrix.node }})
-    needs: core-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -124,7 +123,6 @@ jobs:
   # Jest reporter tests
   jest-tests:
     name: Jest Tests (Node ${{ matrix.node }})
-    needs: core-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -165,7 +163,6 @@ jobs:
   playwright-fixtures:
     name: PW Fixtures (Node ${{ matrix.node }}, PW ${{ matrix.playwright }})
     if: inputs.run-fixtures
-    needs: playwright-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -209,7 +206,6 @@ jobs:
   jest-fixtures:
     name: Jest Fixtures (Node ${{ matrix.node }}, Jest ${{ matrix.jest }})
     if: inputs.run-fixtures
-    needs: jest-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
