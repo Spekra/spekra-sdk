@@ -18,6 +18,7 @@
 
 - **Type Consolidation**: `SpekraReporterOptions` now extends `BaseReporterOptions` from core; shared types re-exported from `@spekra/core`
 - **CI Matrix Testing**: Added Jest version matrix to GitHub Actions workflows; separated core/playwright/jest test jobs
+- **CI Optimization**: Flattened job dependencies for parallel execution; consolidated static checks (typecheck, lint, bundle size) into single job to reduce redundant work across Node versions
 - **Dependency Linting**: New `lint:deps` job in CI using syncpack to enforce consistent dependency versions
 
 ### Internal
