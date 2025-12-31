@@ -11,13 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lint dependency versions across packages
-  lint-deps:
-    name: Lint Dependencies
+  # All static checks in one job (Node-version independent)
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for changeset status
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -31,10 +33,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check dependency versions
+      - name: Lint dependencies
         run: pnpm lint:deps
 
-  # Full matrix tests on all PRs (free for open source)
+      - name: Check changeset
+        if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
+        run: pnpm changeset status --since=origin/main
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Typecheck all packages
+        run: pnpm typecheck
+
+      - name: Lint all packages
+        run: pnpm lint
+
+      - name: Check bundle sizes
+        run: |
+          pnpm --filter @spekra/playwright size
+          pnpm --filter @spekra/jest size
+
+  # Runtime tests (vary by Node version)
   test:
     name: Test
     uses: ./.github/workflows/test.yml
@@ -44,28 +64,3 @@ jobs:
       jest-versions: '["29"]'
       run-fixtures: true
     secrets: inherit
-
-  changeset-check:
-    name: Changeset Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check for changeset
-        run: pnpm changeset status --since=origin/main

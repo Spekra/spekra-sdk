@@ -21,7 +21,7 @@ on:
         default: false
 
 jobs:
-  # Core package tests (shared utilities)
+  # Core package tests
   core-tests:
     name: Core Tests (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
@@ -45,14 +45,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build core
+      - name: Build
         run: pnpm --filter @spekra/core build
 
-      - name: Test core
+      - name: Test
         run: pnpm --filter @spekra/core test
-
-      - name: Typecheck core
-        run: pnpm --filter @spekra/core typecheck
 
   # Playwright reporter tests
   playwright-tests:
@@ -81,15 +78,6 @@ jobs:
       - name: Build
         run: pnpm --filter @spekra/core --filter @spekra/playwright build
 
-      - name: Typecheck
-        run: pnpm --filter @spekra/playwright typecheck
-
-      - name: Typecheck tests
-        run: pnpm --filter @spekra/playwright typecheck:tests
-
-      - name: Lint
-        run: pnpm --filter @spekra/playwright lint
-
       - name: Start Prism mock server
         working-directory: packages/playwright
         run: |
@@ -105,9 +93,6 @@ jobs:
 
       - name: Test with coverage
         run: pnpm --filter @spekra/playwright test:coverage
-
-      - name: Check bundle size
-        run: pnpm --filter @spekra/playwright size
 
       - name: Upload coverage to Codecov
         if: matrix.node == '22'
@@ -147,17 +132,8 @@ jobs:
       - name: Build
         run: pnpm --filter @spekra/core --filter @spekra/jest build
 
-      - name: Typecheck
-        run: pnpm --filter @spekra/jest typecheck
-
-      - name: Lint
-        run: pnpm --filter @spekra/jest lint
-
       - name: Test
         run: pnpm --filter @spekra/jest test
-
-      - name: Check bundle size
-        run: pnpm --filter @spekra/jest size
 
   # Playwright fixture tests (full matrix)
   playwright-fixtures:
@@ -185,13 +161,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build @spekra/playwright
+      - name: Build
         run: pnpm --filter @spekra/core --filter @spekra/playwright build
 
       - name: Install fixture dependencies
         working-directory: packages/test-fixtures/playwright-${{ matrix.playwright }}
         run: |
-          # Override Playwright version for this fixture
           pnpm add -D @playwright/test@${{ matrix.playwright }}
           pnpm exec playwright install chromium
 
@@ -228,13 +203,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build @spekra/jest
+      - name: Build
         run: pnpm --filter @spekra/core --filter @spekra/jest build
 
       - name: Install fixture dependencies
         working-directory: packages/test-fixtures/jest-${{ matrix.jest }}
         run: |
-          # Override Jest version for this fixture
           pnpm add -D jest@${{ matrix.jest }} @types/jest@${{ matrix.jest }} ts-jest@${{ matrix.jest }}
 
       - name: Run fixture tests
