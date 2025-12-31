@@ -4,67 +4,9 @@
   "description": "Playwright test reporter for Spekra - send test results to the Spekra platform",
   "author": "Spekra",
   "license": "MIT",
-  "keywords": [
-    "playwright",
-    "testing",
-    "reporter",
-    "spekra",
-    "test-results",
-    "ci",
-    "continuous-integration"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Spekra/spekra-sdk.git",
-    "directory": "packages/playwright"
-  },
-  "homepage": "https://spekra.dev",
-  "bugs": {
-    "url": "https://github.com/Spekra/spekra-sdk/issues"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.cts",
-  "exports": {
-    ".": {
-      "types": {
-        "import": "./dist/index.d.mts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsdown",
-    "clean": "rm -rf dist node_modules pnpm-lock.yaml",
-    "dev": "tsdown --watch",
-    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
-    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts'",
-    "generate:types": "openapi-typescript openapi.json -o tests/generated/api-types.ts",
-    "lint": "eslint src tests",
-    "lint:fix": "eslint src tests --fix",
-    "prepublishOnly": "pnpm build && pnpm size",
-    "prism:start": "prism mock openapi.json --port 4010 --host 127.0.0.1",
-    "refresh": "pnpm clean && pnpm install",
-    "size": "size-limit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:integration": "vitest run tests/integration",
-    "test:load": "vitest run tests/load",
-    "test:unit": "vitest run tests/unit",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
-  },
+  "bugs": "https://github.com/Spekra/spekra-sdk/issues",
   "dependencies": {
     "@spekra/core": "workspace:*"
-  },
-  "peerDependencies": {
-    "@playwright/test": ">=1.44.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
@@ -88,7 +30,63 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://spekra.dev",
+  "keywords": [
+    "ci",
+    "continuous-integration",
+    "playwright",
+    "reporter",
+    "spekra",
+    "test-results",
+    "testing"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "peerDependencies": {
+    "@playwright/test": ">=1.44.0"
+  },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Spekra/spekra-sdk.git",
+    "directory": "packages/playwright"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rm -rf dist node_modules pnpm-lock.yaml",
+    "dev": "tsdown --watch",
+    "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'tests/**/*.ts'",
+    "generate:types": "openapi-typescript openapi.json -o tests/generated/api-types.ts",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "prepublishOnly": "pnpm build && pnpm size",
+    "prism:start": "prism mock openapi.json --port 4010 --host 127.0.0.1",
+    "refresh": "pnpm clean && pnpm install",
+    "size": "size-limit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run tests/integration",
+    "test:load": "vitest run tests/load",
+    "test:unit": "vitest run tests/unit",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
+  },
+  "types": "./dist/index.d.cts"
 }
