@@ -18,10 +18,10 @@
     "eslint-config-prettier": "^10.0.1",
     "jest": "^29.0.0",
     "size-limit": "^11.0.0",
-    "tsdown": "^0.18.0",
+    "tsdown": "^0.19.0",
     "tslib": "^2.8.1",
     "typescript": "^5.3.0",
-    "typescript-eslint": "^8.19.0",
+    "typescript-eslint": "^8.53.0",
     "vitest": "^1.0.0"
   },
   "engines": {
