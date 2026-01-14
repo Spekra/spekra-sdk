@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UploadArtifactsUseCase } from '../../../src/use-cases/upload-artifacts.use-case';
-import type { LoggerService } from '../../../src/infrastructure/services/logger.service';
+import type { LoggerService, ApiClient } from '@spekra/core';
 import type { UploadClient } from '../../../src/infrastructure/clients/upload.client';
-import type { ApiClient } from '../../../src/infrastructure/clients/api.client';
 import { Artifact } from '../../../src/domain/entities/artifact.entity';
 
 // Mock logger

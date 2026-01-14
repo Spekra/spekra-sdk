@@ -1,0 +1,60 @@
+{
+  "$schema": "https://unpkg.com/syncpack/dist/schema.json",
+  "sortFirst": ["name", "version", "description", "private", "author", "license"],
+  "source": ["package.json", "packages/*/package.json"],
+  "versionGroups": [
+    {
+      "label": "Internal workspace packages use workspace:* protocol",
+      "dependencies": ["@spekra/*"],
+      "dependencyTypes": ["prod", "dev"],
+      "isIgnored": true
+    },
+    {
+      "label": "Peer dependencies specify minimum versions (ignore version sync)",
+      "dependencyTypes": ["peer"],
+      "isIgnored": true
+    },
+    {
+      "label": "Shared dev tooling must be consistent",
+      "dependencies": [
+        "typescript",
+        "typescript-eslint",
+        "eslint",
+        "eslint-config-prettier",
+        "vitest",
+        "@vitest/coverage-v8",
+        "tsdown",
+        "tslib",
+        "@types/node",
+        "prettier",
+        "size-limit",
+        "@size-limit/file"
+      ],
+      "dependencyTypes": ["dev"],
+      "policy": "sameRange"
+    }
+  ],
+  "semverGroups": [
+    {
+      "label": "Ignore workspace packages",
+      "dependencies": ["@spekra/*"],
+      "isIgnored": true
+    },
+    {
+      "label": "Use caret ranges for dev dependencies",
+      "dependencyTypes": ["dev"],
+      "range": "^"
+    },
+    {
+      "label": "Use caret ranges for prod dependencies",
+      "dependencyTypes": ["prod"],
+      "range": "^"
+    },
+    {
+      "label": "Use >= for peer dependencies",
+      "dependencyTypes": ["peer"],
+      "range": ">="
+    }
+  ]
+}
+

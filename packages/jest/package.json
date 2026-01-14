@@ -1,0 +1,80 @@
+{
+  "name": "@spekra/jest",
+  "version": "0.1.0-alpha.1",
+  "description": "Jest test reporter for Spekra - send test results to the Spekra platform",
+  "author": "Spekra",
+  "license": "MIT",
+  "bugs": "https://github.com/Spekra/spekra-sdk/issues",
+  "dependencies": {
+    "@spekra/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@jest/reporters": "^29.0.0",
+    "@size-limit/file": "^11.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.0.1",
+    "jest": "^29.0.0",
+    "size-limit": "^11.0.0",
+    "tsdown": "^0.18.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://spekra.dev",
+  "keywords": [
+    "ci",
+    "continuous-integration",
+    "jest",
+    "reporter",
+    "spekra",
+    "test-results",
+    "testing"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "peerDependencies": {
+    "jest": ">=27.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Spekra/spekra-sdk.git",
+    "directory": "packages/jest"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rm -rf dist node_modules",
+    "dev": "tsdown --watch",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "prepublishOnly": "pnpm build && pnpm size",
+    "size": "size-limit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "./dist/index.d.cts"
+}

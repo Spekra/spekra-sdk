@@ -1,26 +1,12 @@
 {
-    "compilerOptions": {
-      "target": "ES2022",
-      "module": "ESNext",
-      "moduleResolution": "bundler",
-      "lib": ["ES2022", "DOM"],
-      "strict": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "declaration": true,
-      "declarationMap": true,
-      "sourceMap": true,
-      "outDir": "./dist",
-      "rootDir": "./tests",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "noUnusedLocals": true,
-      "noUnusedParameters": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true
-    },
-    "include": ["tests/**/*"],
-    "exclude": ["node_modules", "dist"]
-  }
-  
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "rootDir": "./tests",
+    "outDir": "./dist",
+    // No emit - Playwright handles compilation
+    "noEmit": true
+  },
+  "include": ["tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

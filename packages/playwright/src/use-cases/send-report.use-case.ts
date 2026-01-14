@@ -1,26 +1,14 @@
-import { BaseUseCase, type UseCaseResult } from './base.use-case';
-import { LoggerService } from '../infrastructure/services/logger.service';
 import {
+  BaseUseCase,
+  type UseCaseResult,
+  LoggerService,
   ApiClient,
   type ReportPayload,
   type ReportResponse,
-} from '../infrastructure/clients/api.client';
-import { TestResult } from '../domain/entities/test-result.entity';
+} from '@spekra/core';
 
-/**
- * Run metadata for the report
- */
-export interface RunMetadata {
-  runId: string;
-  source: string;
-  branch: string | null;
-  commitSha: string | null;
-  ciUrl: string | null;
-  shardIndex: number | null;
-  totalShards: number | null;
-  startedAt: string;
-  finishedAt: string | null;
-}
+import { TestResult } from '../domain/entities/test-result.entity';
+import type { RunMetadata } from '../infrastructure/services/run-metadata.service';
 
 /**
  * Input for sending a report
@@ -95,6 +83,7 @@ export class SendReportUseCase extends BaseUseCase<SendReportInput, SendReportOu
     const payload: ReportPayload = {
       runId: metadata.runId,
       source: metadata.source,
+      framework: metadata.framework,
       branch: metadata.branch,
       commitSha: metadata.commitSha,
       ciUrl: metadata.ciUrl,
@@ -108,6 +97,7 @@ export class SendReportUseCase extends BaseUseCase<SendReportInput, SendReportOu
     this.logger.info('Sending report', {
       runId: metadata.runId,
       results: results.length,
+      framework: metadata.framework,
     });
 
     const sendResult = await this.apiClient.sendReport(payload);

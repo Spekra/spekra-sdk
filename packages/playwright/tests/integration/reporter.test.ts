@@ -7,7 +7,7 @@ import type {
   TestCase,
   TestResult as PlaywrightTestResult,
 } from '@playwright/test/reporter';
-import type { SpekraMetrics } from '../../src/types';
+import type { SpekraMetrics } from '@spekra/core';
 
 const PRISM_PORT = 4010;
 const PRISM_URL = `http://127.0.0.1:${PRISM_PORT}/api/reports`;

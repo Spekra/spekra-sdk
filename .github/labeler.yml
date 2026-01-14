@@ -2,9 +2,17 @@
 # Automatically labels PRs based on files changed
 
 # Package labels
+pkg:core:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/core/**'
+
 pkg:playwright:
   - changed-files:
       - any-glob-to-any-file: 'packages/playwright/**'
+
+pkg:jest:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/jest/**'
 
 # Content type labels
 documentation:

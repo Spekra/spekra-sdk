@@ -1,11 +1,10 @@
-import type {
+import {
   RedactionOptions,
   RedactionPattern,
-  ResolvedConfig,
   ResolvedRedactionConfig,
-  SpekraReporterOptions,
-} from '../../types';
-import { LoggerService } from './logger.service';
+  LoggerService,
+} from '@spekra/core';
+import type { ResolvedConfig, SpekraReporterOptions } from '../../types';
 
 /**
  * Default configuration values

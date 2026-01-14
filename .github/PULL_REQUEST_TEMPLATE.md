@@ -22,6 +22,7 @@
 <!-- Mark which packages this PR modifies -->
 
 - [ ] `@spekra/playwright`
+- [ ] `@spekra/jest`
 - [ ] Root/monorepo configuration
 - [ ] Documentation only
 

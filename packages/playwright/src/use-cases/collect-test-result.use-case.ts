@@ -6,9 +6,13 @@ import type {
   Suite,
 } from '@playwright/test/reporter';
 
-import { BaseUseCase, type UseCaseResult } from './base.use-case';
-import { LoggerService } from '../infrastructure/services/logger.service';
-import { RedactionService } from '../infrastructure/services/redaction.service';
+import {
+  BaseUseCase,
+  type UseCaseResult,
+  LoggerService,
+  RedactionService,
+  normalizeTestFilePath,
+} from '@spekra/core';
 import { TestResult, type TestStep } from '../domain/entities/test-result.entity';
 import { Artifact } from '../domain/entities/artifact.entity';
 
@@ -282,29 +286,7 @@ export class CollectTestResultUseCase extends BaseUseCase<
    * Get relative test file path
    */
   private getTestFile(test: TestCase): string {
-    const file = test.location.file.replace(/\\/g, '/');
-
-    const markers = [
-      '/e2e/tests/',
-      '/e2e/',
-      '/tests/',
-      '/test/',
-      '/__tests__/',
-      '/specs/',
-      '/spec/',
-    ];
-    for (const marker of markers) {
-      const idx = file.indexOf(marker);
-      if (idx !== -1) {
-        return file.substring(idx + marker.length);
-      }
-    }
-
-    const parts = file.split('/');
-    if (parts.length >= 2) {
-      return parts.slice(-2).join('/');
-    }
-    return parts.pop() || file;
+    return normalizeTestFilePath(test.location.file);
   }
 
   /**

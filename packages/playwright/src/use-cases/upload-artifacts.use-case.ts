@@ -1,11 +1,9 @@
-import { BaseUseCase, type UseCaseResult } from './base.use-case';
-import { LoggerService } from '../infrastructure/services/logger.service';
+import { BaseUseCase, type UseCaseResult, LoggerService, ApiClient } from '@spekra/core';
 import {
   UploadClient,
   type UploadTask,
   type BatchUploadResult,
 } from '../infrastructure/clients/upload.client';
-import { ApiClient } from '../infrastructure/clients/api.client';
 import { Artifact } from '../domain/entities/artifact.entity';
 
 /**

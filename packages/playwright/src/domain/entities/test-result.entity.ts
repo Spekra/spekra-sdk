@@ -1,11 +1,10 @@
 import { randomUUID } from 'crypto';
 import { BaseEntity } from './base.entity';
 import { Artifact, type ArtifactMetadata } from './artifact.entity';
+import type { TestStatus } from '@spekra/core';
 
-/**
- * Test status values
- */
-export type TestStatus = 'passed' | 'failed' | 'skipped' | 'timedOut' | 'interrupted';
+// Re-export TestStatus from core for convenience
+export type { TestStatus } from '@spekra/core';
 
 /**
  * Test step (action performed during test)
