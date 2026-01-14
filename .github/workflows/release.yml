@@ -37,6 +37,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Run all checks before publishing (safety net)
+      - name: Build
+        run: pnpm build
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -45,9 +48,6 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-
-      - name: Build
-        run: pnpm build
 
       - name: Test
         run: pnpm test
