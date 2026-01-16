@@ -8,12 +8,15 @@
     "@spekra/test-fixture-pw-1.48": "0.0.0",
     "@spekra/core": "0.0.0",
     "@spekra/jest": "0.0.0",
-    "@spekra/test-fixture-jest-29": "0.0.0"
+    "@spekra/test-fixture-jest-29": "0.0.0",
+    "@spekra/vitest": "0.0.0",
+    "@spekra/test-fixture-vitest-1.x": "0.0.0"
   },
   "changesets": [
     "beige-brooms-walk",
     "common-turkeys-say",
     "frank-llamas-tie",
-    "shaggy-horses-follow"
+    "shaggy-horses-follow",
+    "add-vitest-reporter"
   ]
 }
