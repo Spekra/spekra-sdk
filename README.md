@@ -32,6 +32,8 @@ The SDKs in this repo make it trivial to send your test data to Spekra. Just add
 | Package | Version | Description |
 |---------|---------|-------------|
 | [@spekra/playwright](./packages/playwright) | [![npm](https://img.shields.io/npm/v/@spekra/playwright.svg)](https://www.npmjs.com/package/@spekra/playwright) | Playwright test reporter |
+| [@spekra/jest](./packages/jest) | [![npm](https://img.shields.io/npm/v/@spekra/jest.svg)](https://www.npmjs.com/package/@spekra/jest) | Jest test reporter |
+| [@spekra/vitest](./packages/vitest) | [![npm](https://img.shields.io/npm/v/@spekra/vitest.svg)](https://www.npmjs.com/package/@spekra/vitest) | Vitest test reporter |
 
 ## Quick Start
 
@@ -50,6 +52,48 @@ export default defineConfig({
     ['html'],
     ['@spekra/playwright', { apiKey: process.env.SPEKRA_API_KEY }],
   ],
+});
+```
+
+### Jest
+
+```bash
+npm install @spekra/jest
+```
+
+```javascript
+// jest.config.js
+module.exports = {
+  reporters: [
+    'default',
+    ['@spekra/jest', {
+      apiKey: process.env.SPEKRA_API_KEY,
+      source: 'my-unit-tests',
+    }],
+  ],
+};
+```
+
+### Vitest
+
+```bash
+npm install @spekra/vitest
+```
+
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    reporters: [
+      'default',
+      ['@spekra/vitest', {
+        apiKey: process.env.SPEKRA_API_KEY,
+        source: 'my-unit-tests',
+      }],
+    ],
+  },
 });
 ```
 

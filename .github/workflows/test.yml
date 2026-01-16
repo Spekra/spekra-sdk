@@ -15,6 +15,10 @@ on:
         description: 'JSON array of Jest versions to test'
         type: string
         default: '["29"]'
+      vitest-versions:
+        description: 'JSON array of Vitest versions to test'
+        type: string
+        default: '["1.x"]'
       run-fixtures:
         description: 'Whether to run fixture tests'
         type: boolean
@@ -135,6 +139,36 @@ jobs:
       - name: Test
         run: pnpm --filter @spekra/jest test
 
+  # Vitest reporter tests
+  vitest-tests:
+    name: Vitest Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @spekra/core --filter @spekra/vitest build
+
+      - name: Test
+        run: pnpm --filter @spekra/vitest test
+
   # Playwright fixture tests (full matrix)
   playwright-fixtures:
     name: PW Fixtures (Node ${{ matrix.node }}, PW ${{ matrix.playwright }})
@@ -213,6 +247,46 @@ jobs:
 
       - name: Run fixture tests
         working-directory: packages/test-fixtures/jest-${{ matrix.jest }}
+        run: pnpm test
+        env:
+          SPEKRA_API_KEY: test-fixture-key
+          SPEKRA_API_URL: http://localhost:3000/api/reports
+
+  # Vitest fixture tests (full matrix)
+  vitest-fixtures:
+    name: Vitest Fixtures (Node ${{ matrix.node }}, Vitest ${{ matrix.vitest }})
+    if: inputs.run-fixtures
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+        vitest: ${{ fromJson(inputs.vitest-versions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @spekra/core --filter @spekra/vitest build
+
+      - name: Install fixture dependencies
+        working-directory: packages/test-fixtures/vitest-${{ matrix.vitest }}
+        run: pnpm install
+
+      - name: Run fixture tests
+        working-directory: packages/test-fixtures/vitest-${{ matrix.vitest }}
         run: pnpm test
         env:
           SPEKRA_API_KEY: test-fixture-key

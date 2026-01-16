@@ -1,0 +1,17 @@
+{
+  "name": "@spekra/test-fixture-vitest-1.x",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vitest 1.x test fixtures for @spekra/vitest reporter testing",
+  "scripts": {
+    "clean": "rm -rf node_modules coverage pnpm-lock.yaml",
+    "refresh": "pnpm clean && pnpm install",
+    "test": "vitest run",
+    "test:with-reporter": "vitest run"
+  },
+  "devDependencies": {
+    "@spekra/vitest": "workspace:*",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

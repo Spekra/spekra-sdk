@@ -2,12 +2,13 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@spekra/playwright", "@spekra/jest"]],
+  "fixed": [["@spekra/playwright", "@spekra/jest", "@spekra/vitest"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@spekra/test-fixture-pw-*"
+    "@spekra/test-fixture-pw-*",
+    "@spekra/test-fixture-vitest-*"
   ]
 }
