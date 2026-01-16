@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { Vitest, File, Task, TaskResultPack } from 'vitest';
+import type { Vitest, File, TaskResultPack } from 'vitest';
 
 // We need to mock the core modules before importing the reporter
 vi.mock('@spekra/core', async () => {
@@ -140,7 +140,7 @@ describe('SpekraReporter', () => {
       reporter.onInit(createMockVitest());
 
       // Pack without result
-      const packs: TaskResultPack[] = [['task-1', undefined, undefined]];
+      const packs: TaskResultPack[] = [['task-1', undefined, {}]];
 
       reporter.onTaskUpdate(packs);
 
@@ -156,7 +156,7 @@ describe('SpekraReporter', () => {
         [
           'task-1',
           { state: 'todo', duration: 0 },
-          undefined,
+          {},
         ],
       ];
 
@@ -221,27 +221,4 @@ function createMockVitest(configOverrides: Partial<Vitest['config']> = {}): Vite
       getFiles: () => files,
     },
   } as unknown as Vitest;
-}
-
-function createMockFile(overrides: Partial<File> = {}): File {
-  return {
-    id: 'file-1',
-    type: 'suite',
-    name: 'test.spec.ts',
-    filepath: '/path/to/test.spec.ts',
-    projectName: undefined,
-    tasks: [],
-    mode: 'run',
-    ...overrides,
-  } as File;
-}
-
-function createMockTask(overrides: Partial<Task> = {}): Task {
-  return {
-    id: 'task-1',
-    type: 'test',
-    name: 'test name',
-    mode: 'run',
-    ...overrides,
-  } as Task;
 }
