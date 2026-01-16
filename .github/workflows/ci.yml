@@ -53,6 +53,7 @@ jobs:
         run: |
           pnpm --filter @spekra/playwright size
           pnpm --filter @spekra/jest size
+          pnpm --filter @spekra/vitest size
 
   # Runtime tests (vary by Node version)
   test:
@@ -62,5 +63,6 @@ jobs:
       node-versions: '["20", "22"]'
       playwright-versions: '["1.44", "1.48"]'
       jest-versions: '["29"]'
+      vitest-versions: '["1.x"]'
       run-fixtures: true
     secrets: inherit
