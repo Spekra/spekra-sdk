@@ -1,6 +1,6 @@
 {
   "name": "@spekra/jest",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Jest test reporter for Spekra - send test results to the Spekra platform",
   "author": "Spekra",
   "license": "MIT",
