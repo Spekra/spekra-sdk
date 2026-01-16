@@ -13,10 +13,11 @@
     "@spekra/test-fixture-vitest-1.x": "0.0.0"
   },
   "changesets": [
+    "add-vitest-reporter",
     "beige-brooms-walk",
     "common-turkeys-say",
     "frank-llamas-tie",
     "shaggy-horses-follow",
-    "add-vitest-reporter"
+    "vitest-initial-release"
   ]
 }
