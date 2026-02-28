@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-  '/api/reports': {
+  '/api/v1/reports': {
     parameters: {
       query?: never;
       header?: never;

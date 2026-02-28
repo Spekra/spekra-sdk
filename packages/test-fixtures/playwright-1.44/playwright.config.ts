@@ -19,7 +19,7 @@ export default defineConfig({
       '@spekra/playwright',
       {
         apiKey: process.env.SPEKRA_API_KEY,
-        apiUrl: process.env.SPEKRA_API_URL || 'http://localhost:3000/api/reports',
+        apiUrl: process.env.SPEKRA_API_URL || 'http://localhost:3000/api/v1/reports',
         projectName: 'test-fixture-pw-1.44',
         debug: true,
       },

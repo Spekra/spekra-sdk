@@ -93,7 +93,7 @@ That's it! Run your tests and results will appear in Spekra.
 | [`maxBufferSize`](#memory-management) | `number` | `1000` | Max buffered results |
 | [`onError`](#callbacks) | `function` | - | Error callback |
 | [`onMetrics`](#callbacks) | `function` | - | Metrics callback |
-| [`apiUrl`](#apiurl) | `string` | `https://spekra.dev/api/reports` | API endpoint |
+| [`apiUrl`](#apiurl) | `string` | `https://spekra.dev/api/v1/reports` | API endpoint |
 
 ### Option Details
 
@@ -320,7 +320,7 @@ Called after each batch and at end of run with performance metrics.
 Custom API endpoint for self-hosted Spekra instances. Currently, this is used internally. Self-hosted option is not available yet.
 
 ```typescript
-{ apiUrl: 'https://your-instance.com/api/reports' }
+{ apiUrl: 'https://your-instance.com/api/v1/reports' }
 ```
 
 ### Full Configuration Example
@@ -337,7 +337,7 @@ export default defineConfig({
         apiKey: process.env.SPEKRA_API_KEY,
         
         // Basic options
-        apiUrl: 'https://spekra.dev/api/reports',
+        apiUrl: 'https://spekra.dev/api/v1/reports',
         enabled: process.env.CI === 'true',
         debug: false,
         batchSize: 20,
@@ -453,12 +453,12 @@ See [PII Redaction](#pii-redaction) for full configuration options.
 
 ### Data Privacy
 
-The SDK only sends test metadata (file paths, test names, durations, error messages). It does **NOT** send:
+The SDK always sends test metadata (file paths, test names, durations, error messages). By default, it does **NOT** send:
 - Source code
 - Environment variables (except CI-specific ones for URL/branch/commit)
-- Screenshots or videos
 - Network traffic
-- Any files from your system
+
+If artifact capture is enabled in Playwright and attachments are present, artifact files are uploaded via presigned URLs (for example traces, screenshots, videos, or custom attachments).
 
 ### Request Security
 

@@ -251,7 +251,7 @@
     "parameters": {}
   },
   "paths": {
-    "/api/reports": {
+    "/api/v1/reports": {
       "post": {
         "summary": "Submit test results",
         "description": "Submit Playwright test results from a test run. Supports sharded runs - multiple submissions with the same runId will be aggregated. Results are batched and can be sent incrementally during test execution.",
