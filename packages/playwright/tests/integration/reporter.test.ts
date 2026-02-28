@@ -10,7 +10,7 @@ import type {
 import type { SpekraMetrics } from '@spekra/core';
 
 const PRISM_PORT = 4010;
-const PRISM_URL = `http://127.0.0.1:${PRISM_PORT}/api/reports`;
+const PRISM_URL = `http://127.0.0.1:${PRISM_PORT}/api/v1/reports`;
 
 let prismProcess: ChildProcess | null = null;
 
@@ -52,7 +52,7 @@ vi.mock('../../src/infrastructure/services/ci.service', () => {
 async function waitForPrism(maxAttempts = 30): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const response = await fetch(`http://127.0.0.1:${PRISM_PORT}/api/reports`, {
+      const response = await fetch(`http://127.0.0.1:${PRISM_PORT}/api/v1/reports`, {
         method: 'GET',
       });
       if (response.ok) {

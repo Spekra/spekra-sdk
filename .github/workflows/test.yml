@@ -88,7 +88,7 @@ jobs:
           npx @stoplight/prism-cli mock openapi.json --port 4010 --host 127.0.0.1 &
           # Wait for Prism to be ready
           for i in {1..30}; do
-            if curl -s http://127.0.0.1:4010/api/reports > /dev/null 2>&1; then
+            if curl -s http://127.0.0.1:4010/api/v1/reports > /dev/null 2>&1; then
               echo "Prism is ready"
               break
             fi
@@ -209,7 +209,7 @@ jobs:
         run: pnpm test
         env:
           SPEKRA_API_KEY: test-fixture-key
-          SPEKRA_API_URL: http://localhost:3000/api/reports
+          SPEKRA_API_URL: http://localhost:3000/api/v1/reports
 
   # Jest fixture tests (full matrix)
   jest-fixtures:
@@ -250,7 +250,7 @@ jobs:
         run: pnpm test
         env:
           SPEKRA_API_KEY: test-fixture-key
-          SPEKRA_API_URL: http://localhost:3000/api/reports
+          SPEKRA_API_URL: http://localhost:3000/api/v1/reports
 
   # Vitest fixture tests (full matrix)
   vitest-fixtures:
@@ -290,4 +290,4 @@ jobs:
         run: pnpm test
         env:
           SPEKRA_API_KEY: test-fixture-key
-          SPEKRA_API_URL: http://localhost:3000/api/reports
+          SPEKRA_API_URL: http://localhost:3000/api/v1/reports

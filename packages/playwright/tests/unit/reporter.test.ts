@@ -315,7 +315,7 @@ describe('SpekraReporter', () => {
       expect(mockFetch).toHaveBeenCalled();
 
       const [url, options] = mockFetch.mock.calls[0];
-      expect(url).toBe('https://spekra.dev/api/reports');
+      expect(url).toBe('https://spekra.dev/api/v1/reports');
       expect(options.method).toBe('POST');
 
       const body = JSON.parse(options.body);

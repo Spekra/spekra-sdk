@@ -6,7 +6,7 @@ import type { ResolvedConfig } from '../../src/types';
 function createMockConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
   return {
     apiKey: 'test-api-key',
-    apiUrl: 'https://spekra.dev/api/reports',
+    apiUrl: 'https://spekra.dev/api/v1/reports',
     source: 'test-suite',
     enabled: true,
     debug: false,
