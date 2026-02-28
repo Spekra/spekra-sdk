@@ -10,7 +10,7 @@ import type { ResolvedConfig, SpekraReporterOptions } from '../../types';
  * Default configuration values
  */
 export const DEFAULTS = {
-  apiUrl: 'https://spekra.dev/api/reports',
+  apiUrl: 'https://spekra.dev/api/v1/reports',
   enabled: true,
   debug: false,
   batchSize: 20,

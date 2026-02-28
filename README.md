@@ -105,7 +105,7 @@ That's it. Run your tests and results flow to Spekra automatically.
 
 **Never break tests.** The SDKs are designed to fail silently. Network issues or API errors are logged but never cause test failures.
 
-**Privacy first.** We only collect test metadata (names, durations, pass/fail). No source code, no screenshots, no sensitive data.
+**Privacy first.** We only collect test metadata (names, durations, pass/fail). No source code is collected; Playwright artifacts are only uploaded when your run includes attachments.
 
 ## Contributing
 
