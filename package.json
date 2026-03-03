@@ -30,7 +30,7 @@
     "build": "pnpm -r build",
     "changeset": "changeset",
     "changeset:empty": "pnpm changeset add --empty",
-    "changeset:publish": "pnpm build && changeset publish --access public",
+    "changeset:publish": "pnpm changeset:publish:latest",
     "changeset:version": "changeset version",
     "clean": "pnpm -r clean && rm -rf node_modules pnpm-lock.yaml && pnpm store prune",
     "lint": "pnpm -r lint",
@@ -45,6 +45,8 @@
     "test:coverage": "pnpm -r test:coverage",
     "test:watch": "pnpm -r test:watch",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:tests": "pnpm -r typecheck:tests"
+    "typecheck:tests": "pnpm -r typecheck:tests",
+    "changeset:publish:latest": "pnpm build && changeset publish --access public --tag latest",
+    "changeset:publish:alpha": "pnpm build && changeset publish --access public --tag alpha"
   }
 }

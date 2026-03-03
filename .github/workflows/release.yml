@@ -65,12 +65,34 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Determine publish command
+        id: publish_config
+        shell: bash
+        run: |
+          TAG=latest
+          if [ -f .changeset/pre.json ]; then
+            MODE=$(node -p "try { require('./.changeset/pre.json').mode || '' } catch { '' }")
+            if [ "$MODE" = "pre" ]; then
+              TAG=alpha
+            fi
+          fi
+
+          if [ "$TAG" = "alpha" ]; then
+            PUBLISH_CMD='pnpm changeset:publish:alpha'
+          else
+            PUBLISH_CMD='pnpm changeset:publish:latest'
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "publish_cmd=$PUBLISH_CMD" >> "$GITHUB_OUTPUT"
+          echo "Using npm dist-tag: $TAG"
+
       - name: Create Release PR or Publish
         id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm changeset:version
-          publish: pnpm changeset:publish
+          publish: ${{ steps.publish_config.outputs.publish_cmd }}
           title: 'chore: release packages'
           commit: 'chore: release packages'
         env:

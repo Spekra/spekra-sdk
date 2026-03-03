@@ -120,8 +120,21 @@ export class SpekraReporter implements Reporter {
     if (!this.enabled) return;
 
     try {
-      await this.sendFinalReport();
-      this.container?.logger.info('Report sent successfully');
+      const reportResult = await this.sendFinalReport();
+
+      if (reportResult.success) {
+        if (reportResult.resultsAttempted > 0) {
+          this.container?.logger.info('Report sent successfully', {
+            results: reportResult.resultsAttempted,
+          });
+        }
+      } else {
+        this.container?.logger.warn('Report failed to send; continuing without failing tests', {
+          results: reportResult.resultsAttempted,
+          requestsFailed: this.metrics.requestsFailed,
+        });
+      }
+
       this.notifyMetrics();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -137,15 +150,17 @@ export class SpekraReporter implements Reporter {
   // Private: Report Sending
   // ============================================================================
 
-  private async sendFinalReport(): Promise<void> {
-    if (!this.container || !this.runMetadataService) return;
+  private async sendFinalReport(): Promise<{ success: boolean; resultsAttempted: number }> {
+    if (!this.container || !this.runMetadataService) {
+      return { success: false, resultsAttempted: 0 };
+    }
 
     // Get buffered results
     const results = this.container.collectUseCase.flushResults();
 
     if (results.length === 0) {
       this.container.logger.verbose('No results to send');
-      return;
+      return { success: true, resultsAttempted: 0 };
     }
 
     // Build run metadata
@@ -156,12 +171,17 @@ export class SpekraReporter implements Reporter {
 
     if (!sendResult.success) {
       this.metrics.requestsFailed++;
+      this.container.logger.error('Failed to send final report', new Error(sendResult.error), {
+        runId: metadata.runId,
+        results: results.length,
+        code: sendResult.code,
+      });
       this.notifyError({
         type: 'api',
         message: sendResult.error,
         resultsAffected: results.length,
       });
-      return;
+      return { success: false, resultsAttempted: results.length };
     }
 
     // Update metrics
@@ -174,6 +194,8 @@ export class SpekraReporter implements Reporter {
 
     // Upload artifacts
     await this.uploadArtifacts(results, sendResult.data.uploadUrls);
+
+    return { success: true, resultsAttempted: results.length };
   }
 
   private async uploadArtifacts(
