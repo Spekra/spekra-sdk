@@ -5,12 +5,10 @@
   "author": "Spekra",
   "license": "MIT",
   "bugs": "https://github.com/Spekra/spekra-sdk/issues",
-  "dependencies": {
-    "@spekra/core": "workspace:*"
-  },
   "devDependencies": {
     "@jest/reporters": "^29.0.0",
     "@size-limit/file": "^11.0.0",
+    "@spekra/core": "workspace:*",
     "@types/jest": "^29.5.0",
     "@types/node": "^20.10.0",
     "@vitest/coverage-v8": "^1.0.0",

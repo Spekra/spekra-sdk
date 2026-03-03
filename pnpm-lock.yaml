@@ -58,10 +58,6 @@ importers:
         version: 1.6.1(@types/node@20.19.27)
 
   packages/jest:
-    dependencies:
-      '@spekra/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@jest/reporters':
         specifier: ^29.0.0
@@ -69,6 +65,9 @@ importers:
       '@size-limit/file':
         specifier: ^11.0.0
         version: 11.2.0(size-limit@11.2.0)
+      '@spekra/core':
+        specifier: workspace:*
+        version: link:../core
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
@@ -107,10 +106,6 @@ importers:
         version: 1.6.1(@types/node@20.19.27)
 
   packages/playwright:
-    dependencies:
-      '@spekra/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@playwright/test':
         specifier: ^1.44.0
@@ -118,6 +113,9 @@ importers:
       '@size-limit/file':
         specifier: ^11.0.0
         version: 11.2.0(size-limit@11.2.0)
+      '@spekra/core':
+        specifier: workspace:*
+        version: link:../core
       '@stoplight/prism-cli':
         specifier: ^5.14.2
         version: 5.14.2
@@ -219,14 +217,13 @@ importers:
         version: 1.6.1(@types/node@20.19.27)
 
   packages/vitest:
-    dependencies:
-      '@spekra/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@size-limit/file':
         specifier: ^11.0.0
         version: 11.2.0(size-limit@11.2.0)
+      '@spekra/core':
+        specifier: workspace:*
+        version: link:../core
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.27

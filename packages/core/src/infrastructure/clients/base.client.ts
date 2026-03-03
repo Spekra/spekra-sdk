@@ -46,6 +46,8 @@ export abstract class BaseClient {
     const startTime = Date.now();
     let retryCount = 0;
     let lastError: ClientError | undefined;
+    const requestMethod = options.method ?? 'GET';
+    const logUrl = this.toLoggableUrl(url);
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const isLastAttempt = attempt === maxAttempts;
@@ -66,6 +68,13 @@ export abstract class BaseClient {
 
         // Don't retry non-retriable errors
         if (!this.isRetriable(result.error)) {
+          this.logger.warn('Request failed without retry', {
+            url: logUrl,
+            method: requestMethod,
+            errorType: result.error.type,
+            statusCode: result.error.statusCode,
+            error: result.error.message,
+          });
           return {
             success: false,
             error: result.error,
@@ -77,6 +86,13 @@ export abstract class BaseClient {
         lastError = this.wrapError(error);
 
         if (!this.isRetriable(lastError)) {
+          this.logger.warn('Request failed without retry', {
+            url: logUrl,
+            method: requestMethod,
+            errorType: lastError.type,
+            statusCode: lastError.statusCode,
+            error: lastError.message,
+          });
           return {
             success: false,
             error: lastError,
@@ -92,15 +108,30 @@ export abstract class BaseClient {
         this.logger.verbose(`Request failed, retrying in ${delay}ms`, {
           attempt,
           maxAttempts,
+          url: logUrl,
+          method: requestMethod,
+          errorType: lastError?.type,
+          statusCode: lastError?.statusCode,
           error: lastError?.message,
         });
         await this.sleep(delay);
       }
     }
 
+    const finalError = lastError ?? { type: 'network', message: 'All retry attempts failed' };
+    this.logger.error('Request failed after all retry attempts', undefined, {
+      url: logUrl,
+      method: requestMethod,
+      attempts: maxAttempts,
+      retries: retryCount,
+      errorType: finalError.type,
+      statusCode: finalError.statusCode,
+      error: finalError.message,
+    });
+
     return {
       success: false,
-      error: lastError ?? { type: 'network', message: 'All retry attempts failed' },
+      error: finalError,
       latencyMs: Date.now() - startTime,
       retryCount,
     };
@@ -188,5 +219,13 @@ export abstract class BaseClient {
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-}
 
+  private toLoggableUrl(rawUrl: string): string {
+    try {
+      const parsed = new URL(rawUrl);
+      return `${parsed.origin}${parsed.pathname}`;
+    } catch {
+      return rawUrl;
+    }
+  }
+}
