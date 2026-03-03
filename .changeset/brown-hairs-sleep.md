@@ -1,7 +1,6 @@
 ---
 "@spekra/playwright": patch
 "@spekra/vitest": patch
-"@spekra/core": patch
 "@spekra/jest": patch
 ---
 
