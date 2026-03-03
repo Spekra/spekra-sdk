@@ -1,5 +1,11 @@
 # @spekra/playwright
 
+## 0.1.0-alpha.5
+
+### Patch Changes
+
+- b35abe8: Moved internal core package to a bundled dependency
+
 ## 0.1.0-alpha.4
 
 ### Patch Changes
