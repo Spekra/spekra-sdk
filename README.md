@@ -107,6 +107,11 @@ That's it. Run your tests and results flow to Spekra automatically.
 
 **Privacy first.** We only collect test metadata (names, durations, pass/fail). No source code is collected; Playwright artifacts are only uploaded when your run includes attachments.
 
+## AI / Maintainer Workflow
+
+- Assistant bootstrap: [`docs/AI_ASSISTANT.md`](./docs/AI_ASSISTANT.md)
+- Historical implementation plans: [`docs/plans/INDEX.md`](./docs/plans/INDEX.md)
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
