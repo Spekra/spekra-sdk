@@ -2,6 +2,10 @@
 
 Thanks for your interest in contributing! This guide will help you get set up.
 
+Assistant and maintainer workflow entry point:
+
+- [`docs/AI_ASSISTANT.md`](./docs/AI_ASSISTANT.md)
+
 ## Development
 
 This is a monorepo managed with [pnpm workspaces](https://pnpm.io/workspaces) and [Changesets](https://github.com/changesets/changesets).
