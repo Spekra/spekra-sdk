@@ -6,18 +6,18 @@ function decodeXmlEntities(input: string): string {
   return input
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
-    .replaceAll('&amp;', '&')
     .replaceAll('&quot;', '"')
-    .replaceAll('&apos;', "'");
+    .replaceAll('&apos;', "'")
+    .replaceAll('&amp;', '&');
 }
 
 function stripTags(input: string): string {
-  return decodeXmlEntities(input.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+  return decodeXmlEntities(input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
 function parseAttributes(fragment: string): Record<string, string> {
   const attributes: Record<string, string> = {};
-  const attrRegex = /([A-Za-z_][\w:.-]*)\s*=\s*("([^"]*)"|'([^']*)')/g;
+  const attrRegex = /([A-Za-z_][^\s=]*)\s*=\s*("([^"]*)"|'([^']*)')/g;
   let match: RegExpExecArray | null;
 
   while ((match = attrRegex.exec(fragment)) !== null) {

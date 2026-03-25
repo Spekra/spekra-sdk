@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import picomatch from 'picomatch';
 
 const SKIPPED_DIRECTORIES = new Set(['node_modules', '.git', '.pnpm']);
 
@@ -36,49 +37,6 @@ function hasWildcard(input: string): boolean {
   return input.includes('*') || input.includes('?');
 }
 
-function escapeRegexChar(char: string): string {
-  return /[\\^$+?.()|[\]{}]/.test(char) ? `\\${char}` : char;
-}
-
-function globToRegex(globPattern: string): RegExp {
-  const normalized = globPattern.split(path.sep).join('/');
-  let regex = '^';
-
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized[i];
-    const next = normalized[i + 1];
-    const nextNext = normalized[i + 2];
-
-    if (char === '*' && next === '*') {
-      if (nextNext === '/') {
-        // `**/` should match zero or more nested directories.
-        regex += '(?:.*/)?';
-        i += 2;
-        continue;
-      }
-
-      regex += '.*';
-      i++;
-      continue;
-    }
-
-    if (char === '*') {
-      regex += '[^/]*';
-      continue;
-    }
-
-    if (char === '?') {
-      regex += '[^/]';
-      continue;
-    }
-
-    regex += escapeRegexChar(char);
-  }
-
-  regex += '$';
-  return new RegExp(regex);
-}
-
 function normalizeForMatch(input: string): string {
   return input.split(path.sep).join('/');
 }
@@ -100,14 +58,14 @@ export async function resolveJunitFiles(
     if (hasWildcard(spec)) {
       const isAbsoluteSpec = path.isAbsolute(spec);
       const normalizedSpec = normalizeForMatch(spec.replace(/^\.\//, ''));
-      const regex = globToRegex(normalizedSpec);
+      const isMatch = picomatch(normalizedSpec);
 
       for (const file of allFiles) {
         const candidate = isAbsoluteSpec
           ? normalizeForMatch(path.resolve(file))
           : normalizeForMatch(path.relative(cwd, file));
 
-        if (regex.test(candidate) && candidate.toLowerCase().endsWith('.xml')) {
+        if (isMatch(candidate) && candidate.toLowerCase().endsWith('.xml')) {
           resolved.add(path.resolve(file));
         }
       }
