@@ -1,0 +1,97 @@
+name: Analytics Upload Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Source label sent to Spekra
+        required: false
+        type: string
+        default: sdk-github-actions-smoke
+      framework:
+        description: Framework value sent to Spekra
+        required: false
+        type: choice
+        options:
+          - vitest
+          - jest
+          - playwright
+        default: vitest
+      api_url:
+        description: Optional API URL override
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  upload-smoke:
+    name: Upload JUnit To Spekra
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require Spekra API key
+        env:
+          SPEKRA_API_KEY: ${{ secrets.SPEKRA_API_KEY }}
+        run: |
+          if [ -z "${SPEKRA_API_KEY}" ]; then
+            echo "Missing required secret: SPEKRA_API_KEY"
+            exit 1
+          fi
+
+      - name: Run analytics-cli tests and generate JUnit
+        id: tests
+        continue-on-error: true
+        working-directory: packages/analytics-cli
+        run: |
+          mkdir -p ../../.tmp
+          pnpm exec vitest run \
+            --config vitest.config.ts \
+            --reporter=junit \
+            --outputFile=../../.tmp/analytics-cli.junit.xml
+
+      - name: Validate generated JUnit report
+        if: always()
+        run: pnpm analytics:validate -- --junit-paths .tmp/analytics-cli.junit.xml --strict
+
+      - name: Upload report to Spekra
+        if: always()
+        env:
+          SPEKRA_API_KEY: ${{ secrets.SPEKRA_API_KEY }}
+          SPEKRA_API_URL: ${{ inputs.api_url }}
+        run: |
+          pnpm analytics:upload -- \
+            --junit-paths .tmp/analytics-cli.junit.xml \
+            --source "${{ inputs.source }}" \
+            --framework "${{ inputs.framework }}"
+
+      - name: Upload JUnit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-cli-junit
+          path: .tmp/analytics-cli.junit.xml
+          if-no-files-found: error
+
+      - name: Fail workflow when tests fail
+        if: steps.tests.outcome == 'failure'
+        run: |
+          echo "analytics-cli tests failed (upload still attempted)."
+          exit 1

@@ -99,6 +99,49 @@ export default defineConfig({
 
 That's it. Run your tests and results flow to Spekra automatically.
 
+## JUnit Upload Workflow (Experimental)
+
+For frameworks or environments where reporter APIs are unstable, you can use a
+report-generation + upload flow similar to Trunk:
+
+1. generate JUnit XML from your test runner
+2. validate report quality locally
+3. upload the report to Spekra
+
+Example for Vitest:
+
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    reporters: [
+      ['junit', { outputFile: './junit.xml', addFileAttribute: true }],
+    ],
+  },
+});
+```
+
+```bash
+# Validate report shape and warnings
+pnpm analytics:validate -- --junit-paths "./junit.xml" --strict
+
+# Upload results to Spekra
+SPEKRA_API_KEY=sk_xxx pnpm analytics:upload -- \
+  --junit-paths "./junit.xml" \
+  --source "frontend-unit-tests" \
+  --framework "vitest"
+```
+
+Notes:
+
+- `--junit-paths` accepts comma-separated files, directories, or globs.
+- `--framework` currently supports `vitest`, `jest`, and `playwright` to match
+  the current API enum.
+- This path is metadata-focused and does not include deep Playwright artifacts
+  (trace/video/screenshots).
+
 ## Philosophy
 
 **Zero friction.** Adding Spekra should take minutes, not hours. No test rewrites, no complex configuration.

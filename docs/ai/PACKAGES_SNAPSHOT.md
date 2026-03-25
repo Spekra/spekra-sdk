@@ -16,6 +16,7 @@ Key top-level areas:
 - `packages/playwright/` for the Playwright reporter
 - `packages/jest/` for the Jest reporter
 - `packages/vitest/` for the Vitest reporter
+- `packages/analytics-cli/` for uploader-first JUnit validation/upload tooling
 - `packages/test-fixtures/` for compatibility and fixture projects
 - `.changeset/` for release/version intent
 - `.github/` for CI, labeling, security, and release automation
@@ -56,6 +57,18 @@ Owns:
 Primary docs:
 
 - `packages/vitest/README.md`
+
+### `packages/analytics-cli`
+
+Owns:
+
+- JUnit XML parsing and normalization to Spekra report payloads
+- uploader-first validation/upload command surface
+- CI metadata and upload orchestration for report-based integrations
+
+Primary docs:
+
+- `packages/analytics-cli/README.md`
 
 ### `packages/core`
 
