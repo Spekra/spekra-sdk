@@ -8,7 +8,7 @@
     "defu": "^6.1.4",
     "husky": "^9.0.0",
     "lint-staged": "^15.2.0",
-    "syncpack": "^13.0.4",
+    "syncpack": "^14.0.0",
     "vitest": "^1.0.0"
   },
   "engines": {
