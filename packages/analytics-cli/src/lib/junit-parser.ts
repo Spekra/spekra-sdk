@@ -12,18 +12,43 @@ function decodeXmlEntities(input: string): string {
 }
 
 function stripTags(input: string): string {
-  return decodeXmlEntities(input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+  return decodeXmlEntities(input.replace(/<[^<>]*>/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
 function parseAttributes(fragment: string): Record<string, string> {
   const attributes: Record<string, string> = {};
-  const attrRegex = /([A-Za-z_][^\s=]*)\s*=\s*("([^"]*)"|'([^']*)')/g;
-  let match: RegExpExecArray | null;
+  let i = 0;
+  const len = fragment.length;
 
-  while ((match = attrRegex.exec(fragment)) !== null) {
-    const name = match[1];
-    const value = decodeXmlEntities(match[3] ?? match[4] ?? '');
-    attributes[name] = value;
+  const isSpace = (c: string) => c === ' ' || c === '\t' || c === '\n' || c === '\r';
+  const skipSpace = () => { while (i < len && isSpace(fragment[i])) i++; };
+
+  while (i < len) {
+    skipSpace();
+    if (i >= len) break;
+
+    if (!/[A-Za-z_]/.test(fragment[i])) { i++; continue; }
+
+    const nameStart = i;
+    while (i < len && fragment[i] !== '=' && !isSpace(fragment[i])) i++;
+    const name = fragment.slice(nameStart, i);
+
+    skipSpace();
+    if (i >= len || fragment[i] !== '=') continue;
+    i++;
+    skipSpace();
+    if (i >= len) break;
+
+    const quote = fragment[i];
+    if (quote !== '"' && quote !== "'") continue;
+    i++;
+
+    const valueStart = i;
+    while (i < len && fragment[i] !== quote) i++;
+    const rawValue = fragment.slice(valueStart, i);
+    if (i < len) i++;
+
+    attributes[name] = decodeXmlEntities(rawValue);
   }
 
   return attributes;
