@@ -1,0 +1,41 @@
+name: 'Upload JUnit Reports to Spekra'
+description: 'Parse and upload JUnit XML test reports to Spekra Analytics'
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  junit-paths:
+    description: 'Comma-separated JUnit files, directories, or glob patterns (e.g. "reports/**/*.xml")'
+    required: true
+  api-key:
+    description: 'Spekra API key. Store this as a repository secret and pass via `secrets.SPEKRA_API_KEY`.'
+    required: true
+  source:
+    description: 'Stable identifier for this test suite (e.g. "unit", "e2e"). Used to group runs over time.'
+    required: true
+  framework:
+    description: 'Test framework that produced the reports: vitest, jest, or playwright'
+    required: false
+    default: 'vitest'
+  api-url:
+    description: 'Override the Spekra API URL (for self-hosted or staging environments)'
+    required: false
+  version:
+    description: 'Version of @spekra/analytics-cli to use (defaults to latest)'
+    required: false
+    default: 'latest'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Upload JUnit reports to Spekra
+      shell: bash
+      env:
+        SPEKRA_API_KEY: ${{ inputs.api-key }}
+        SPEKRA_SOURCE: ${{ inputs.source }}
+        SPEKRA_FRAMEWORK: ${{ inputs.framework }}
+        SPEKRA_API_URL: ${{ inputs.api-url }}
+      run: |
+        npx --yes @spekra/analytics-cli@${{ inputs.version }} upload \
+          --junit-paths "${{ inputs.junit-paths }}"
