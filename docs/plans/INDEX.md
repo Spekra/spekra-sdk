@@ -11,7 +11,7 @@ Status policy:
 
 ## Active
 
-- None currently tracked in this index
+- [2026-03-24-junit-upload-cli-v1.md](2026-03-24-junit-upload-cli-v1.md)
 
 ## Completed
 

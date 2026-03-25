@@ -95,6 +95,21 @@ pnpm --filter @spekra/playwright test:watch
 pnpm --filter @spekra/playwright test:coverage
 ```
 
+### JUnit Analytics Workflow (Experimental)
+
+For uploader-first validation flows (without framework reporter internals):
+
+```bash
+# Validate report shape and warnings
+pnpm analytics:validate -- --junit-paths "./junit.xml" --strict
+
+# Upload report to Spekra
+SPEKRA_API_KEY=sk_xxx pnpm analytics:upload -- \
+  --junit-paths "./junit.xml" \
+  --source "frontend-unit-tests" \
+  --framework "vitest"
+```
+
 ### Code Quality
 
 Before submitting a PR, ensure:

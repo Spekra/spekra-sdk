@@ -27,6 +27,8 @@
   "packageManager": "pnpm@9.15.0",
   "repository": "Spekra/spekra-sdk.git",
   "scripts": {
+    "analytics:upload": "pnpm --filter @spekra/analytics-cli build && node packages/analytics-cli/dist/cli.mjs upload",
+    "analytics:validate": "pnpm --filter @spekra/analytics-cli build && node packages/analytics-cli/dist/cli.mjs validate",
     "build": "pnpm -r build",
     "changeset": "changeset",
     "changeset:empty": "pnpm changeset add --empty",
