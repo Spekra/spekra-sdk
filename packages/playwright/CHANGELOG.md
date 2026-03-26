@@ -1,5 +1,11 @@
 # @spekra/playwright
 
+## 0.1.0-alpha.6
+
+### Patch Changes
+
+- ac7deec: Version bump
+
 ## 0.1.0-alpha.5
 
 ### Patch Changes

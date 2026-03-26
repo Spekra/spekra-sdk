@@ -1,5 +1,11 @@
 # @spekra/analytics-cli
 
+## 0.1.0-alpha.2
+
+### Patch Changes
+
+- ac7deec: Version bump
+
 ## 0.1.0-alpha.1
 
 ### Minor Changes
