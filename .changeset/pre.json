@@ -10,10 +10,12 @@
     "@spekra/jest": "0.0.0",
     "@spekra/test-fixture-jest-29": "0.0.0",
     "@spekra/vitest": "0.0.0",
-    "@spekra/test-fixture-vitest-1.x": "0.0.0"
+    "@spekra/test-fixture-vitest-1.x": "0.0.0",
+    "@spekra/analytics-cli": "0.0.0"
   },
   "changesets": [
     "add-vitest-reporter",
+    "analytics-cli-initial-release",
     "beige-brooms-walk",
     "brown-hairs-sleep",
     "common-turkeys-say",
