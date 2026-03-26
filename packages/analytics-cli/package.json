@@ -1,6 +1,6 @@
 {
   "name": "@spekra/analytics-cli",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "description": "CLI utilities for uploading JUnit reports to Spekra",
   "bin": {
     "spekra-analytics": "./dist/cli.mjs"
