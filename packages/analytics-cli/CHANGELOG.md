@@ -1,5 +1,11 @@
 # @spekra/analytics-cli
 
+## 0.1.0-alpha.1
+
+### Minor Changes
+
+- 0db8b46: Version bump
+
 ## 0.1.0-alpha.0
 
 ### Minor Changes
