@@ -6,7 +6,7 @@
   "license": "MIT",
   "bugs": "https://github.com/Spekra/spekra-sdk/issues",
   "devDependencies": {
-    "@playwright/test": "^1.44.0",
+    "@playwright/test": "^1.58.2",
     "@size-limit/file": "^11.0.0",
     "@spekra/core": "workspace:*",
     "@stoplight/prism-cli": "^5.14.2",
@@ -15,14 +15,14 @@
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^10.0.1",
     "jiti": "^2.4.2",
-    "msw": "^2.0.0",
-    "openapi-typescript": "^7.10.1",
-    "prettier": "^3.1.0",
+    "msw": "^2.12.14",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.8.1",
     "size-limit": "^11.0.0",
-    "tsdown": "^0.18.0",
+    "tsdown": "^0.21.7",
     "tslib": "^2.8.1",
     "typescript": "^5.3.0",
-    "typescript-eslint": "^8.19.0",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^1.0.0"
   },
   "engines": {
